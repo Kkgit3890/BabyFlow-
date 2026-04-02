@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8fafc" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="BabyFlow" />
+  <title>BabyFlow</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect rx='16' width='64' height='64' fill='%23f8fafc'/%3E%3Cpath d='M18 34c0-8 6-14 14-14s14 6 14 14v8H18z' fill='%23111827'/%3E%3Ccircle cx='24' cy='28' r='3' fill='%23f8fafc'/%3E%3Ccircle cx='40' cy='28' r='3' fill='%23f8fafc'/%3E%3C/svg%3E" />
+  <style>
+    :root{
+      --bg:#f8fafc;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e2e8f0;
+      --accent:#111827;
+      --yellow:#fff8c5;
+      --green:#ecfdf5;
+      --shadow:0 8px 24px rgba(15,23,42,.06);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:linear-gradient(180deg,#f8fafc 0%, #f3f4f6 100%);
+      color:var(--text);
+      padding:18px;
+    }
+    .wrap{max-width:820px;margin:0 auto;}
+    .hero{padding:8px 2px 16px;}
+    .badge{
+      display:inline-block;
+      font-size:12px;
+      color:#334155;
+      background:#fff;
+      border:1px solid var(--border);
+      padding:6px 10px;
+      border-radius:999px;
+      margin-bottom:10px;
+    }
+    h1{margin:0 0 6px;font-size:32px;letter-spacing:-.03em;}
+    .sub{margin:0;color:var(--muted);line-height:1.45;font-size:15px;}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+      margin:14px 0;
+    }
+    .card h2{margin:0 0 12px;font-size:18px;letter-spacing:-.01em;}
+    .tiny{color:var(--muted);font-size:13px;line-height:1.4;margin-top:-2px;margin-bottom:10px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+    label{display:block;font-size:14px;font-weight:700;margin:4px 0 6px;}
+    input{
+      width:100%;
+      padding:12px 13px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      font-size:16px;
+      background:#fff;
+      color:var(--text);
+    }
+    input:focus{outline:none;border-color:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.12);}
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:6px;
+      min-height:16px;
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+    button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:800;cursor:pointer;}
+    .primary{background:var(--accent); color:#fff;}
+    .secondary{background:#eef2f7; color:var(--text);}
+    .danger{background:#fff1f2; color:#9f1239;}
+    .status{margin-top:10px;font-size:13px;color:var(--muted);}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+    @media (max-width:720px){.summary{grid-template-columns:1fr;}}
+    .summary-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px;}
+    .summary-label{color:var(--muted);font-size:12px;margin-bottom:4px;}
+    .summary-value{font-size:18px;font-weight:800;}
+    .timeline{display:flex;flex-direction:column;gap:10px;}
+    .item{border:1px solid var(--border);border-radius:16px;padding:12px 14px;background:#fff;}
+    .item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+    .item-title{font-size:15px;font-weight:800;}
+    .item-time{font-size:15px;font-weight:800;white-space:nowrap;text-align:right;}
+    .item-note{color:var(--muted);font-size:13px;line-height:1.4;margin-top:5px;}
+    .item-duration{color:var(--muted);font-size:13px;line-height:1.4;margin-top:3px;font-style:italic;}
+    .chip{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;margin-top:7px;margin-right:6px;}
+    .actual{background:var(--green); color:#166534;}
+    .projected{background:var(--yellow); color:#854d0e;}
+    .empty{color:var(--muted);line-height:1.5;}
+    .footer-note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:12px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="badge">Hosted-ready single-file web app</div>
+      <h1>BabyFlow</h1>
+      <p class="sub">A simple baby day predictor that recalculates the rest of the day when you enter actual nap times. Timeline shows naps and feeds in chronological order.</p>
+    </div>
+
+    <div class="card">
+      <h2>Baby template</h2>
+      <div class="tiny">Set your usual defaults here. The first nap has its own length, and Nap 3 is treated as the long afternoon nap target.</div>
+      <div class="grid">
+        <div>
+          <label for="wakeTime">Wake time</label>
+          <input id="wakeTime" type="time" />
+          <div class="hint"></div>
+        </div>
+        <div>
+          <label for="firstWW">First wake window (minutes)</label>
+          <input id="firstWW" type="number" min="1" value="45" />
+          <div class="hint" id="firstWWHint"></div>
+        </div>
+        <div>
+          <label for="laterWW">Later wake windows (minutes)</label>
+          <input id="laterWW" type="number" min="1" value="60" />
+          <div class="hint" id="laterWWHint"></div>
+        </div>
+        <div>
+          <label for="feedInterval">Feed interval (minutes)</label>
+          <input id="feedInterval" type="number" min="1" value="165" />
+          <div class="hint" id="feedIntervalHint"></div>
+        </div>
+        <div>
+          <label for="firstNap">First nap length (minutes)</label>
+          <input id="firstNap" type="number" min="1" value="75" />
+          <div class="hint" id="firstNapHint"></div>
+        </div>
+        <div>
+          <label for="regularNap">Other regular nap lengths (minutes)</label>
+          <input id="regularNap" type="number" min="1" value="95" />
+          <div class="hint" id="regularNapHint"></div>
+        </div>
+        <div>
+          <label for="longNap">Long afternoon nap length (minutes)</label>
+          <input id="longNap" type="number" min="1" value="180" />
+          <div class="hint" id="longNapHint"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Today's actuals</h2>
+      <div class="tiny">Leave fields blank if you want them projected. If you enter an actual start or end time, the rest of the day recalculates from there.</div>
+      <div class="grid">
+        <div>
+          <label for="nap1Start">Nap 1 start</label>
+          <input id="nap1Start" type="time" />
+        </div>
+        <div>
+          <label for="nap1End">Nap 1 end</label>
+          <input id="nap1End" type="time" />
+        </div>
+        <div>
+          <label for="nap2Start">Nap 2 start</label>
+          <input id="nap2Start" type="time" />
+        </div>
+        <div>
+          <label for="nap2End">Nap 2 end</label>
+          <input id="nap2End" type="time" />
+        </div>
+        <div>
+          <label for="nap3Start">Nap 3 / long nap start</label>
+          <input id="nap3Start" type="time" />
+        </div>
+        <div>
+          <label for="nap3End">Nap 3 / long nap end</label>
+          <input id="nap3End" type="time" />
+        </div>
+        <div>
+          <label for="nap4Start">Nap 4 start</label>
+          <input id="nap4Start" type="time" />
+        </div>
+        <div>
+          <label for="nap4End">Nap 4 end</label>
+          <input id="nap4End" type="time" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="primary" onclick="generateTimeline()">Generate / Recalculate</button>
+        <button class="secondary" onclick="loadExample()">Load example</button>
+        <button class="secondary" onclick="saveState()">Save</button>
+        <button class="danger" onclick="clearAll()">Clear all</button>
+      </div>
+      <div id="saveStatus" class="status">Changes also auto-save on your device in supported browsers.</div>
+    </div>
+
+    <div class="card">
+      <h2>Today at a glance</h2>
+      <div class="summary">
+        <div class="summary-card">
+          <div class="summary-label">Next projected feed</div>
+          <div id="nextFeed" class="summary-value">—</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">First nap</div>
+          <div id="firstNapCard" class="summary-value">—</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Long nap (Nap 3)</div>
+          <div id="longNapCard" class="summary-value">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Projected timeline</h2>
+      <div id="timeline" class="empty">Enter a wake time, then tap <strong>Generate / Recalculate</strong>.</div>
+      <div class="footer-note">This MVP uses Nap 3 as the long afternoon nap and mixes feeds into the timeline in time order.</div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "babyflow_local_v4";
+
+    function $(id){ return document.getElementById(id); }
+
+    function toMinutes(value) {
+      if (!value || !value.includes(':')) return null;
+      const parts = value.split(':').map(Number);
+      if (parts.length !== 2 || parts.some(Number.isNaN)) return null;
+      return parts[0] * 60 + parts[1];
+    }
+
+    function toTimeString(totalMinutes) {
+      if (totalMinutes == null || Number.isNaN(totalMinutes)) return "—";
+      let mins = ((totalMinutes % 1440) + 1440) % 1440;
+      const h24 = Math.floor(mins / 60);
+      const m = mins % 60;
+      const ampm = h24 >= 12 ? 'PM' : 'AM';
+      let h12 = h24 % 12;
+      if (h12 === 0) h12 = 12;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    }
+
+    function minutesToPretty(mins) {
+      if (mins == null || Number.isNaN(mins)) return "";
+      const hours = Math.floor(mins / 60);
+      const minutes = mins % 60;
+      if (hours === 0) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+      if (minutes === 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
+      return `${hours} hour${hours === 1 ? '' : 's'} ${minutes} minute${minutes === 1 ? '' : 's'}`;
+    }
+
+    function durationBetween(start, end) {
+      if (start == null || end == null) return "";
+      let diff = end - start;
+      if (diff < 0) diff += 1440;
+      return minutesToPretty(diff);
+    }
+
+    function addMinutes(base, mins) {
+      return base + mins;
+    }
+
+    function getNum(id) {
+      const n = parseInt($(id).value, 10);
+      return Number.isNaN(n) ? null : n;
+    }
+
+    function chip(type){
+      return `<span class="chip ${type}">${type === 'actual' ? 'actual' : 'projected'}</span>`;
+    }
+
+    function eventCard(title, timeText, note, mode, durationText="") {
+      return `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${title}</div>
+            <div class="item-time">${timeText}</div>
+          </div>
+          ${mode ? chip(mode) : ""}
+          ${durationText ? `<div class="item-duration">(${durationText})</div>` : ""}
+          ${note ? `<div class="item-note">${note}</div>` : ''}
+        </div>`;
+    }
+
+    function computeNap(prevWakeEnd, wwMins, napLenMins, startId, endId) {
+      const actualStart = toMinutes($(startId).value);
+      const actualEnd = toMinutes($(endId).value);
+
+      let start = actualStart;
+      let end = actualEnd;
+
+      if (start == null && prevWakeEnd != null && wwMins != null) {
+        start = addMinutes(prevWakeEnd, wwMins);
+      }
+      if (end == null && start != null && napLenMins != null) {
+        end = addMinutes(start, napLenMins);
+      }
+
+      return {
+        start,
+        end,
+        usedActual: actualStart != null || actualEnd != null,
+        actualStart: actualStart != null,
+        actualEnd: actualEnd != null
+      };
+    }
+
+    function updateHints() {
+      const mappings = [
+        ['firstWW', 'firstWWHint'],
+        ['laterWW', 'laterWWHint'],
+        ['feedInterval', 'feedIntervalHint'],
+        ['firstNap', 'firstNapHint'],
+        ['regularNap', 'regularNapHint'],
+        ['longNap', 'longNapHint']
+      ];
+      mappings.forEach(([inputId, hintId]) => {
+        const value = getNum(inputId);
+        $(hintId).textContent = value == null ? '' : `= ${minutesToPretty(value)}`;
+      });
+    }
+
+    function saveState() {
+      const ids = [
+        'wakeTime','firstWW','laterWW','feedInterval','firstNap','regularNap','longNap',
+        'nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End'
+      ];
+      const state = {};
+      ids.forEach(id => state[id] = $(id).value);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      $('saveStatus').textContent = "Saved on this device.";
+      updateHints();
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        Object.keys(state).forEach(id => {
+          if ($(id)) $(id).value = state[id];
+        });
+        $('saveStatus').textContent = "Loaded your last saved values.";
+      } catch (e) {
+        $('saveStatus').textContent = "Could not load saved values.";
+      }
+    }
+
+    function loadExample() {
+      $('wakeTime').value = '08:00';
+      $('firstWW').value = '45';
+      $('laterWW').value = '60';
+      $('feedInterval').value = '165';
+      $('firstNap').value = '75';
+      $('regularNap').value = '95';
+      $('longNap').value = '180';
+      $('nap1Start').value = '08:42';
+      $('nap1End').value = '09:57';
+      $('nap2Start').value = '';
+      $('nap2End').value = '';
+      $('nap3Start').value = '';
+      $('nap3End').value = '';
+      $('nap4Start').value = '';
+      $('nap4End').value = '';
+      saveState();
+      updateHints();
+      generateTimeline();
+    }
+
+    function clearAll() {
+      [
+        'wakeTime','firstWW','laterWW','feedInterval','firstNap','regularNap','longNap',
+        'nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End'
+      ].forEach(id => $(id).value = '');
+      $('firstWW').value = '45';
+      $('laterWW').value = '60';
+      $('feedInterval').value = '165';
+      $('firstNap').value = '75';
+      $('regularNap').value = '95';
+      $('longNap').value = '180';
+      localStorage.removeItem(STORAGE_KEY);
+      $('timeline').innerHTML = '<div class="empty">Cleared. Enter a wake time, then tap <strong>Generate / Recalculate</strong>.</div>';
+      $('nextFeed').textContent = '—';
+      $('firstNapCard').textContent = '—';
+      $('longNapCard').textContent = '—';
+      $('saveStatus').textContent = 'Cleared saved values.';
+      updateHints();
+    }
+
+    function napMode(nap){
+      return nap.usedActual ? 'actual' : 'projected';
+    }
+
+    function napNote(nap, noteIfProjected) {
+      if (nap.actualStart && nap.actualEnd) return 'Using actual start and end times.';
+      if (nap.actualStart && !nap.actualEnd) return 'Using actual start time, projecting the end.';
+      if (!nap.actualStart && nap.actualEnd) return 'Using actual end time, projecting the start.';
+      return noteIfProjected || 'Fully projected from your defaults.';
+    }
+
+    function generateTimeline() {
+      updateHints();
+
+      const wake = toMinutes($('wakeTime').value);
+      const firstWW = getNum('firstWW');
+      const laterWW = getNum('laterWW');
+      const feedInterval = getNum('feedInterval');
+      const firstNapLen = getNum('firstNap');
+      const regularNap = getNum('regularNap');
+      const longNapLen = getNum('longNap');
+
+      if ([wake, firstWW, laterWW, feedInterval, firstNapLen, regularNap, longNapLen].some(v => v == null)) {
+        $('timeline').innerHTML = '<div class="empty">Please enter a wake time and make sure all template fields are filled in.</div>';
+        return;
+      }
+
+      const nap1 = computeNap(wake, firstWW, firstNapLen, 'nap1Start', 'nap1End');
+      const nap2 = computeNap(nap1.end, laterWW, regularNap, 'nap2Start', 'nap2End');
+
+      const nap3ActualStart = toMinutes($('nap3Start').value);
+      const nap3ActualEnd = toMinutes($('nap3End').value);
+
+      let projectedNap3Start = addMinutes(nap2.end, laterWW);
+      const targetStartMin = 13 * 60 + 15;
+      const targetStartMax = 15 * 60 + 45;
+
+      if (projectedNap3Start < targetStartMin) projectedNap3Start = targetStartMin;
+      if (projectedNap3Start > targetStartMax) projectedNap3Start = targetStartMax;
+
+      let nap3Start = nap3ActualStart != null ? nap3ActualStart : projectedNap3Start;
+      let nap3End = nap3ActualEnd != null ? nap3ActualEnd : addMinutes(nap3Start, longNapLen);
+
+      const nap3 = {
+        start: nap3Start,
+        end: nap3End,
+        usedActual: nap3ActualStart != null || nap3ActualEnd != null,
+        actualStart: nap3ActualStart != null,
+        actualEnd: nap3ActualEnd != null
+      };
+
+      const nap4 = computeNap(nap3.end, laterWW, regularNap, 'nap4Start', 'nap4End');
+
+      const chronological = [];
+      chronological.push({
+        sortTime: wake,
+        html: eventCard('Wake + feed', toTimeString(wake), 'Starting point for the day.', 'actual')
+      });
+
+      chronological.push({
+        sortTime: nap1.start,
+        html: eventCard(
+          'Nap 1',
+          `${toTimeString(nap1.start)} – ${toTimeString(nap1.end)}`,
+          napNote(nap1, 'Projected from the first wake window and first nap length.'),
+          napMode(nap1),
+          durationBetween(nap1.start, nap1.end)
+        )
+      });
+
+      chronological.push({
+        sortTime: nap1.end,
+        html: eventCard('Feed 2', toTimeString(nap1.end), 'Placed after Nap 1 to keep the timeline in time order.', nap1.actualEnd ? 'actual' : 'projected')
+      });
+
+      chronological.push({
+        sortTime: nap2.start,
+        html: eventCard(
+          'Nap 2',
+          `${toTimeString(nap2.start)} – ${toTimeString(nap2.end)}`,
+          napNote(nap2, 'Projected from the end of Nap 1 and your later wake window.'),
+          napMode(nap2),
+          durationBetween(nap2.start, nap2.end)
+        )
+      });
+
+      chronological.push({
+        sortTime: nap2.end,
+        html: eventCard('Feed 3', toTimeString(nap2.end), 'Placed after Nap 2 to keep the timeline in time order.', nap2.actualEnd ? 'actual' : 'projected')
+      });
+
+      chronological.push({
+        sortTime: nap3.start,
+        html: eventCard(
+          'Nap 3 / long afternoon nap',
+          `${toTimeString(nap3.start)} – ${toTimeString(nap3.end)}`,
+          napNote(nap3, 'Projected as the long afternoon nap, aiming roughly for the 2–5 PM zone when the rest of the day allows.'),
+          napMode(nap3),
+          durationBetween(nap3.start, nap3.end)
+        )
+      });
+
+      chronological.push({
+        sortTime: nap3.end,
+        html: eventCard('Feed 4', toTimeString(nap3.end), 'Placed after Nap 3 to keep the timeline in time order.', nap3.actualEnd ? 'actual' : 'projected')
+      });
+
+      chronological.push({
+        sortTime: nap4.start,
+        html: eventCard(
+          'Nap 4',
+          `${toTimeString(nap4.start)} – ${toTimeString(nap4.end)}`,
+          napNote(nap4, 'Projected from the end of the long nap.'),
+          napMode(nap4),
+          durationBetween(nap4.start, nap4.end)
+        )
+      });
+
+      chronological.push({
+        sortTime: nap4.end,
+        html: eventCard('Feed 5', toTimeString(nap4.end), 'Placed after Nap 4 to keep the timeline in time order.', nap4.actualEnd ? 'actual' : 'projected')
+      });
+
+      let feedProjection = [];
+      let currentFeed = wake;
+      for (let i = 0; i < 4; i++) {
+        currentFeed = addMinutes(currentFeed, feedInterval);
+        feedProjection.push(currentFeed);
+      }
+
+      chronological.sort((a, b) => a.sortTime - b.sortTime);
+
+      $('timeline').innerHTML = `<div class="timeline">${chronological.map(x => x.html).join('')}</div>`;
+      $('nextFeed').textContent = toTimeString(feedProjection[0]);
+      $('firstNapCard').textContent = `${toTimeString(nap1.start)}–${toTimeString(nap1.end)}`;
+      $('longNapCard').textContent = `${toTimeString(nap3.start)}–${toTimeString(nap3.end)}`;
+      saveState();
+      $('saveStatus').textContent = "Saved and recalculated.";
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateHints();
+      const ids = [
+        'wakeTime','firstWW','laterWW','feedInterval','firstNap','regularNap','longNap',
+        'nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End'
+      ];
+      ids.forEach(id => {
+        $(id).addEventListener('change', () => {
+          saveState();
+          updateHints();
+        });
+        $(id).addEventListener('input', updateHints);
+      });
+    });
+  </script>
+</body>
+</html>
