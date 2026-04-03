@@ -99,7 +99,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v14';
+const STORAGE_KEY='babyflow_local_v15';
 const FULL_FEED_MINUTES = 20;
 const TOP_OFF_MINUTES = 5;
 const NIGHT_CAP_MINUTES = 10;
@@ -169,7 +169,11 @@ function generateTimeline(){
   let bedtimeStart;
   if(useNap5){
     const finalWakeStart=naps[naps.length-1].end;
-    let nightCapStart=Math.max(finalWakeStart+laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
+    const latestAllowedBedtimeStart = finalWakeStart + laterWW.max;
+
+    let nightCapStart = Math.max(finalWakeStart + laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
+    nightCapStart = Math.min(nightCapStart, Math.max(finalWakeStart, latestAllowedBedtimeStart - NIGHT_CAP_MINUTES));
+
     feeds.push({time:nightCapStart,title:'Night Cap',note:(nightCapStart-lastFeed<feedR.min)?'Partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:nightCapStart-lastFeed});
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
