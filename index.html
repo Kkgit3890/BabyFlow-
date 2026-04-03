@@ -45,8 +45,8 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
   <div class="two"><div><label>Later wake windows</label></div><div><input id="laterWWRange" value="55-65"><div class="hint" id="laterWWRangeHint"></div></div></div>
   <div class="two"><div><label>First nap</label></div><div><input id="firstNapRange" value="60-75"><div class="hint" id="firstNapRangeHint"></div></div></div>
   <div class="two"><div><label>Regular naps</label></div><div><input id="regularNapRange" value="90-120"><div class="hint" id="regularNapRangeHint"></div></div></div>
-  <div class="two"><div><label>Long afternoon nap</label></div><div><input id="longNapRange" value="160-190"><div class="hint" id="longNapRangeHint"></div></div></div>
-  <div class="two"><div><label>Feed interval</label></div><div><input id="feedRange" value="140-185"><div class="hint" id="feedRangeHint"></div></div></div>
+  <div class="two"><div><label>Long afternoon nap</label></div><div><input id="longNapRange" value="160-180"><div class="hint" id="longNapRangeHint"></div></div></div>
+  <div class="two"><div><label>Feed interval</label></div><div><input id="feedRange" value="140-190"><div class="hint" id="feedRangeHint"></div></div></div>
 
   <div class="quad">
     <div><label>Daytime top-offs</label><select id="allowTopOffs"><option value="yes" selected>Allow</option><option value="no">No</option></select></div>
@@ -61,7 +61,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
     <div><label>Routine without bath (min)</label><input id="routineLengthNoBath" type="number" value="15"><div class="hint" id="routineLengthNoBathHint"></div></div>
   </div>
   <div class="grid">
-    <div id="bedTopOffLengthWrap"><label>Bedtime top-off / night cap (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div>
+    <div id="bedTopOffLengthWrap"><label>Bedtime top-off (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div>
   </div>
 </div>
 
@@ -99,9 +99,10 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v13';
+const STORAGE_KEY='babyflow_local_v14';
 const FULL_FEED_MINUTES = 20;
 const TOP_OFF_MINUTES = 5;
+const NIGHT_CAP_MINUTES = 10;
 const $=id=>document.getElementById(id);
 const tm=v=>{if(!v||!v.includes(':')) return null; let p=v.split(':').map(Number); return p[0]*60+p[1];};
 const ts=m=>{if(m==null||isNaN(m)) return '—'; m=((m%1440)+1440)%1440; let h=Math.floor(m/60), mi=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mi).padStart(2,'0')} ${ap}`;};
@@ -109,7 +110,6 @@ const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%6
 const dur=(a,b)=> pretty(((b-a)%1440+1440)%1440);
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
-const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 function card(title,time,note,chipType,duration=''){return `<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;}
 function computeNap(prevEnd,ww,nap,startId,endId){let s=tm($(startId).value), e=tm($(endId).value); if(s==null&&prevEnd!=null)s=prevEnd+ww; if(e==null&&s!=null)e=s+nap; return {start:s,end:e,usedActual:tm($(startId).value)!=null||tm($(endId).value)!=null};}
@@ -117,7 +117,7 @@ function updateConditionalFields(){let bathSkip=$('includeBath').value==='no'; $
 function updateHints(){[['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields();}
 function saveState(){let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','allowTopOffs','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); $('saveStatus').textContent='Saved on this device.'; updateHints();}
 function loadState(){try{let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id]));}catch(e){}}
-function clearAll(){['dreamFeedTime','wakeTime','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='60-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-190'; $('feedRange').value='140-185'; $('allowTopOffs').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; updateHints();}
+function clearAll(){['dreamFeedTime','wakeTime','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='60-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-190'; $('allowTopOffs').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; updateHints();}
 function loadExample(){clearAll(); $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline();}
 function push(items,t,html){items.push({t,html});}
 
@@ -128,9 +128,9 @@ function generateTimeline(){
 
   const firstWWc=rv(firstWW), laterWWc=rv(laterWW), firstNapC=rv(firstNapR), regNapC=rv(regNapR);
   const nap1=computeNap(wake,firstWWc,firstNapC,'nap1Start','nap1End');
-  const nap2=computeNap(nap1.end,laterWWc,clamp(14*60-laterWWc-(nap1.end+laterWWc),regNapR.min,regNapR.max),'nap2Start','nap2End');
-  let nap3s=tm($('nap3Start').value); if(nap3s==null) nap3s=clamp(14*60, nap2.end+laterWW.min, nap2.end+laterWW.max);
-  let nap3e=tm($('nap3End').value); if(nap3e==null) nap3e=nap3s+clamp(17*60-nap3s,longNapR.min,longNapR.max);
+  const nap2=computeNap(nap1.end,laterWWc,Math.max(regNapR.min, Math.min(regNapR.max, 14*60-laterWWc-(nap1.end+laterWWc))),'nap2Start','nap2End');
+  let nap3s=tm($('nap3Start').value); if(nap3s==null) nap3s=Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max));
+  let nap3e=tm($('nap3End').value); if(nap3e==null) nap3e=nap3s+Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3s));
   const nap3={start:nap3s,end:nap3e,usedActual:tm($('nap3Start').value)!=null||tm($('nap3End').value)!=null};
   const nap4=computeNap(nap3.end,laterWWc,regNapC,'nap4Start','nap4End');
   const naps=[nap1,nap2,nap3,nap4];
@@ -149,33 +149,29 @@ function generateTimeline(){
   const latestFeed1=nap1.start-5;
   if(earliestFeed1<=latestFeed1){
     feeds.push({time:earliestFeed1,title:'Feed 1',note:'Placed during the first wake window to stay within your feed interval.',since:earliestFeed1-lastFeed});
-    lastFeed=earliestFeed1;
-    lastFullFeedStart=earliestFeed1;
+    lastFeed=earliestFeed1; lastFullFeedStart=earliestFeed1;
   }
 
   const postNapFeedCount = useNap5 ? 4 : 3;
   for(let i=0;i<postNapFeedCount;i++){
     const nap=naps[i];
     if(i>=2 && $('allowTopOffs').value==='yes' && nap.end-lastFeed>feedR.max){
-      let top=nap.start-TOP_OFF_MINUTES;
-      if(top-lastFeed<30) top=lastFeed+30;
+      let top=Math.max(lastFeed+30, nap.start-TOP_OFF_MINUTES);
       if(top>=nap.start) top=nap.start-TOP_OFF_MINUTES;
       feeds.push({time:top,title:i===2?'Top-off before long nap':`Top-off before Nap ${i+1}`,note:'Suggested top-off to keep the next full feed within your feed-range rule.',since:top-lastFeed});
       lastFeed=top;
     }
     let nextFeedTime=Math.max(lastFeed+feedR.min, nap.end, lastFullFeedStart + FULL_FEED_MINUTES);
     feeds.push({time:nextFeedTime,title:`Feed ${i+2}`,note:'Full feed.',since:nextFeedTime-lastFeed});
-    lastFeed=nextFeedTime;
-    lastFullFeedStart=nextFeedTime;
+    lastFeed=nextFeedTime; lastFullFeedStart=nextFeedTime;
   }
 
   let bedtimeStart;
   if(useNap5){
     const finalWakeStart=naps[naps.length-1].end;
-    let feed6Start=Math.max(finalWakeStart+laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
-    feeds.push({time:feed6Start,title:'Feed 6',note:(feed6Start-lastFeed<feedR.min)?'Night cap / partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:feed6Start-lastFeed});
-    lastFeed=feed6Start;
-    bedtimeStart = feed6Start + TOP_OFF_MINUTES;
+    let nightCapStart=Math.max(finalWakeStart+laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
+    feeds.push({time:nightCapStart,title:'Night Cap',note:(nightCapStart-lastFeed<feedR.min)?'Partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:nightCapStart-lastFeed});
+    bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
     bedtimeStart = naps[naps.length-1].end + laterWW.min;
   }
@@ -195,9 +191,8 @@ function generateTimeline(){
   push(items,bedtimeStart,card('Bedtime routine',`${ts(bedtimeStart)} – ${ts(bedtimeStart+routineLen)}`,'Wind-down before bed.','routine',pretty(routineLen)));
   bedtimeStart+=routineLen;
   if($('includeBedtimeTopOff').value==='yes'){
-    const topLen=TOP_OFF_MINUTES;
-    push(items,bedtimeStart,card('Bedtime top-off',`${ts(bedtimeStart)} – ${ts(bedtimeStart+topLen)}`,'Separate option from daytime top-offs.','routine',pretty(topLen)));
-    bedtimeStart+=topLen;
+    push(items,bedtimeStart,card('Bedtime top-off',`${ts(bedtimeStart)} – ${ts(bedtimeStart+TOP_OFF_MINUTES)}`,'Separate option from daytime top-offs.','routine',pretty(TOP_OFF_MINUTES)));
+    bedtimeStart+=TOP_OFF_MINUTES;
   }
   push(items,bedtimeStart,card('Goodnight 💤🌙',ts(bedtimeStart),'End of day.','routine'));
 
