@@ -214,9 +214,29 @@
       const earliest=addMinutes(nap2End,laterWWRange.min), latest=addMinutes(nap2End,laterWWRange.max), target=14*60;
       return clamp(target,earliest,latest);
     }
-    function computeFeedEvents(dreamFeed,naps,feedRange,allowTopOffs){
+    function computeFeedEvents(dreamFeed,goodMorning,naps,feedRange,allowTopOffs){
       const events=[]; let lastFeed=dreamFeed;
       events.push({time:dreamFeed,title:'Dream feed',note:'Starting point for feeds for the day.',chipType:'actual',sinceLast:null});
+
+      // Try to place Feed 1 during the first wake window when it fits the feed interval.
+      const firstNap = naps[0];
+      const firstWakeFeedEarliest = Math.max(addMinutes(goodMorning, 15), addMinutes(dreamFeed, feedRange.min));
+      const firstWakeFeedLatest = Math.min(addMinutes(dreamFeed, feedRange.max), firstNap.start - 1);
+      let nextFeedNumber = 1;
+
+      if (firstWakeFeedEarliest <= firstWakeFeedLatest) {
+        const chosenFeed1 = firstWakeFeedEarliest;
+        events.push({
+          time: chosenFeed1,
+          title: 'Feed 1',
+          note: 'Suggested during the first wake window so feeds stay within the target interval before Nap 1.',
+          chipType: 'suggested',
+          sinceLast: chosenFeed1 - lastFeed
+        });
+        lastFeed = chosenFeed1;
+        nextFeedNumber = 2;
+      }
+
       function addPostNapFeed(nap,label,isLast){
         const gap = nap.end - lastFeed;
         let note='Full feed after nap.';
@@ -236,7 +256,7 @@
       }
       naps.forEach((nap,idx)=>{
         if(idx>=2) maybeAddTopOffBeforeNap(nap.start,nap.end,idx===2?'Top-off before long nap':`Top-off before Nap ${idx+1}`);
-        addPostNapFeed(nap,`Feed ${idx+1}`, idx === naps.length-1);
+        addPostNapFeed(nap,`Feed ${nextFeedNumber++}`, idx === naps.length-1);
       });
       return events;
     }
@@ -281,7 +301,7 @@
       items.push({sortTime:dreamFeed, html:eventCard('Dream feed', toTimeString(dreamFeed), 'Starting point for feeds for the day.', 'actual')});
       items.push({sortTime:goodMorning, html:eventCard('Good morning ☀️', toTimeString(goodMorning), 'Start of day.', 'actual')});
 
-      const feedEvents=computeFeedEvents(dreamFeed,naps,feedRange,allowTopOffs);
+      const feedEvents=computeFeedEvents(dreamFeed,goodMorning,naps,feedRange,allowTopOffs);
 
       naps.forEach((nap,idx)=>{
         const title=idx===2?'Nap 3 / long afternoon nap':idx===4?'Nap 5 / cat nap':`Nap ${idx+1}`;
