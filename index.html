@@ -117,7 +117,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "babyflow_local_v7";
+    const STORAGE_KEY = "babyflow_local_v8";
     function $(id){ return document.getElementById(id); }
     function toMinutes(value){ if(!value||!value.includes(':')) return null; const p=value.split(':').map(Number); if(p.length!==2||p.some(Number.isNaN)) return null; return p[0]*60+p[1]; }
     function toTimeString(totalMinutes){ if(totalMinutes==null||Number.isNaN(totalMinutes)) return "—"; let mins=((totalMinutes%1440)+1440)%1440; const h24=Math.floor(mins/60),m=mins%60; const ampm=h24>=12?'PM':'AM'; let h12=h24%12; if(h12===0) h12=12; return `${h12}:${String(m).padStart(2,'0')} ${ampm}`; }
@@ -139,23 +139,21 @@
     function chooseNap3Start(nap2End,laterWWRange){ const earliest=addMinutes(nap2End,laterWWRange.min), latest=addMinutes(nap2End,laterWWRange.max), target=14*60; return clamp(target,earliest,latest); }
     function computeFeedEvents(morningFeed,naps,feedRange,allowTopOffs){
       const events=[]; let lastFeed=morningFeed;
-      events.push({time:morningFeed,title:'Feed 1',note:'First full feed, 5 minutes after Good morning ☀️.',chipType:'actual'});
+      events.push({time:morningFeed,title:'Feed 1',note:'First full feed, 5 minutes after Good morning ☀️.',chipType:'actual',sinceLast:null});
       function addPostNapFeed(nap,label,isLast){
+        const gap = nap.end - lastFeed;
         let note='Full feed after nap.';
-        if(isLast){
-          const gap = nap.end - lastFeed;
-          if(gap < feedRange.min) note = 'Night cap / partial feed since it has been less than your minimum full-feed interval.';
-        }
-        events.push({time:nap.end,title:label,note:note,chipType:nap.actualEnd?'actual':'suggested'});
+        if(isLast && gap < feedRange.min){ note = 'Night cap / partial feed since it has been less than your minimum full-feed interval.'; }
+        events.push({time:nap.end,title:label,note:note,chipType:nap.actualEnd?'actual':'suggested',sinceLast:gap});
         lastFeed=nap.end;
       }
       function maybeAddTopOffBeforeNap(napStart,napEnd,label){
         const gapIfWaitUntilAfterNap=napEnd-lastFeed;
         if(allowTopOffs&&gapIfWaitUntilAfterNap>feedRange.max){
-          let topOffTime=napStart;
+          let topOffTime=napStart-1;
           if(topOffTime-lastFeed<30) topOffTime=lastFeed+30;
-          if(topOffTime<napStart) topOffTime=napStart;
-          events.push({time:topOffTime,title:label,note:'Suggested top-off to keep the next full feed within your feed-range rule.',chipType:'suggested'});
+          if(topOffTime>=napStart) topOffTime=napStart-1;
+          events.push({time:topOffTime,title:label,note:'Suggested top-off to keep the next full feed within your feed-range rule.',chipType:'suggested',sinceLast:topOffTime-lastFeed});
           lastFeed=topOffTime;
         }
       }
@@ -209,7 +207,10 @@
         items.push({sortTime:nap.start,html:eventCard(title,`${toTimeString(nap.start)} – ${toTimeString(nap.end)}`,napNote(nap,note),napChipType(nap),durationBetween(nap.start,nap.end))});
       });
 
-      feedEvents.forEach(ev=>items.push({sortTime:ev.time,html:eventCard(ev.title,toTimeString(ev.time),ev.note,ev.chipType)}));
+      feedEvents.forEach(ev=>{
+        const feedDuration = ev.sinceLast != null ? `${minutesToPretty(ev.sinceLast)} after last feed` : '';
+        items.push({sortTime:ev.time,html:eventCard(ev.title,toTimeString(ev.time),ev.note,ev.chipType,feedDuration)});
+      });
 
       let bedtimeStart=naps[naps.length-1].end;
       if(includeBath){
