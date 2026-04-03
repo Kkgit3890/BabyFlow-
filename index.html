@@ -10,10 +10,7 @@
 body{margin:0;padding:18px;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#f8fafc 0%,#f3f4f6 100%)}
 .wrap{max-width:980px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:14px 0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.two{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;align-items:end}
-.triple{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.quad{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.two{display:grid;grid-template-columns:1.2fr 1fr;gap:10px;align-items:end}.triple{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.quad{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 @media (max-width:820px){.grid,.two,.triple,.quad{grid-template-columns:1fr}}
 label{display:block;font-size:14px;font-weight:700;margin:4px 0 6px}
 input,select{width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:14px;font-size:16px;background:#fff;color:var(--text)}
@@ -35,7 +32,6 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </head>
 <body>
 <div class="wrap">
-
 <div class="card">
   <h2>BabyFlow</h2>
   <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
@@ -65,7 +61,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
     <div><label>Routine without bath (min)</label><input id="routineLengthNoBath" type="number" value="15"><div class="hint" id="routineLengthNoBathHint"></div></div>
   </div>
   <div class="grid">
-    <div id="bedTopOffLengthWrap"><label>Bedtime top-off / night cap (min)</label><input id="bedTopOffLength" type="number" value="10"><div class="hint" id="bedTopOffLengthHint"></div></div>
+    <div id="bedTopOffLengthWrap"><label>Bedtime top-off / night cap (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div>
   </div>
 </div>
 
@@ -76,7 +72,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
     <div><label>Nap 2 start</label><input id="nap2Start" type="time"></div><div><label>Nap 2 end</label><input id="nap2End" type="time"></div>
     <div><label>Nap 3 / long nap start</label><input id="nap3Start" type="time"></div><div><label>Nap 3 / long nap end</label><input id="nap3End" type="time"></div>
     <div><label>Nap 4 start</label><input id="nap4Start" type="time"></div><div><label>Nap 4 end</label><input id="nap4End" type="time"></div>
-    <div><label>Nap 5 start</label><input id="nap5Start" type="time"></div><div><label>Nap 5 end</label><input id="nap5End" type="time"></div>
+    <div id="nap5StartWrap"><label>Nap 5 start</label><input id="nap5Start" type="time"></div><div id="nap5EndWrap"><label>Nap 5 end</label><input id="nap5End" type="time"></div>
   </div>
   <div class="row">
     <button class="primary" onclick="generateTimeline()">Generate / Recalculate</button>
@@ -100,11 +96,12 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
   <h2>Projected timeline</h2>
   <div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div>
 </div>
-
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v12';
+const STORAGE_KEY='babyflow_local_v13';
+const FULL_FEED_MINUTES = 20;
+const TOP_OFF_MINUTES = 5;
 const $=id=>document.getElementById(id);
 const tm=v=>{if(!v||!v.includes(':')) return null; let p=v.split(':').map(Number); return p[0]*60+p[1];};
 const ts=m=>{if(m==null||isNaN(m)) return '—'; m=((m%1440)+1440)%1440; let h=Math.floor(m/60), mi=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mi).padStart(2,'0')} ${ap}`;};
@@ -116,17 +113,12 @@ const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 function card(title,time,note,chipType,duration=''){return `<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;}
 function computeNap(prevEnd,ww,nap,startId,endId){let s=tm($(startId).value), e=tm($(endId).value); if(s==null&&prevEnd!=null)s=prevEnd+ww; if(e==null&&s!=null)e=s+nap; return {start:s,end:e,usedActual:tm($(startId).value)!=null||tm($(endId).value)!=null};}
-function updateConditionalFields(){let bathSkip=$('includeBath').value==='no'; $('bathLengthWrap').classList.toggle('hidden',bathSkip); $('routineLengthBathWrap').classList.toggle('hidden',bathSkip); $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');}
-function updateHints(){
-  [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';});
-  [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10)));
-  updateConditionalFields();
-}
+function updateConditionalFields(){let bathSkip=$('includeBath').value==='no'; $('bathLengthWrap').classList.toggle('hidden',bathSkip); $('routineLengthBathWrap').classList.toggle('hidden',bathSkip); $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no'); let hideNap5=$('maxNaps').value==='4'; $('nap5StartWrap').classList.toggle('hidden',hideNap5); $('nap5EndWrap').classList.toggle('hidden',hideNap5);}
+function updateHints(){[['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields();}
 function saveState(){let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','allowTopOffs','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); $('saveStatus').textContent='Saved on this device.'; updateHints();}
 function loadState(){try{let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id]));}catch(e){}}
-function clearAll(){['dreamFeedTime','wakeTime','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='60-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-190'; $('feedRange').value='140-185'; $('allowTopOffs').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='10'; updateHints();}
+function clearAll(){['dreamFeedTime','wakeTime','nap1Start','nap1End','nap2Start','nap2End','nap3Start','nap3End','nap4Start','nap4End','nap5Start','nap5End'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='60-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-190'; $('feedRange').value='140-185'; $('allowTopOffs').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; updateHints();}
 function loadExample(){clearAll(); $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline();}
-
 function push(items,t,html){items.push({t,html});}
 
 function generateTimeline(){
@@ -142,13 +134,15 @@ function generateTimeline(){
   const nap3={start:nap3s,end:nap3e,usedActual:tm($('nap3Start').value)!=null||tm($('nap3End').value)!=null};
   const nap4=computeNap(nap3.end,laterWWc,regNapC,'nap4Start','nap4End');
   const naps=[nap1,nap2,nap3,nap4];
-  if($('maxNaps').value==='5'){ let s=tm($('nap5Start').value); if(s==null) s=nap4.end+laterWWc; let e=tm($('nap5End').value); if(e==null) e=s+45; naps.push({start:s,end:e,usedActual:tm($('nap5Start').value)!=null||tm($('nap5End').value)!=null}); }
+  const useNap5 = $('maxNaps').value==='5';
+  if(useNap5){ let s=tm($('nap5Start').value); if(s==null) s=nap4.end+laterWWc; let e=tm($('nap5End').value); if(e==null) e=s+45; naps.push({start:s,end:e,usedActual:tm($('nap5Start').value)!=null||tm($('nap5End').value)!=null}); }
 
   const items=[];
   push(items,dream,card('Dream feed',ts(dream),'Starting point for feeds for the day.','actual'));
   push(items,wake,card('Good morning ☀️',ts(wake),'Start of day.','actual'));
 
   let lastFeed=dream;
+  let lastFullFeedStart=dream;
   const feeds=[];
 
   const earliestFeed1=Math.max(dream+feedR.min,wake+15);
@@ -156,30 +150,35 @@ function generateTimeline(){
   if(earliestFeed1<=latestFeed1){
     feeds.push({time:earliestFeed1,title:'Feed 1',note:'Placed during the first wake window to stay within your feed interval.',since:earliestFeed1-lastFeed});
     lastFeed=earliestFeed1;
+    lastFullFeedStart=earliestFeed1;
   }
 
-  for(let i=0;i<Math.min(4,naps.length);i++){
+  const postNapFeedCount = useNap5 ? 4 : 3;
+  for(let i=0;i<postNapFeedCount;i++){
     const nap=naps[i];
     if(i>=2 && $('allowTopOffs').value==='yes' && nap.end-lastFeed>feedR.max){
-      let top=nap.start-1;
+      let top=nap.start-TOP_OFF_MINUTES;
       if(top-lastFeed<30) top=lastFeed+30;
-      if(top>=nap.start) top=nap.start-1;
+      if(top>=nap.start) top=nap.start-TOP_OFF_MINUTES;
       feeds.push({time:top,title:i===2?'Top-off before long nap':`Top-off before Nap ${i+1}`,note:'Suggested top-off to keep the next full feed within your feed-range rule.',since:top-lastFeed});
       lastFeed=top;
     }
-    let nextFeedTime=Math.max(lastFeed+feedR.min, nap.end);
-    // never let a feed happen too soon after the previous one
-    if(nextFeedTime-lastFeed<feedR.min) nextFeedTime=lastFeed+feedR.min;
+    let nextFeedTime=Math.max(lastFeed+feedR.min, nap.end, lastFullFeedStart + FULL_FEED_MINUTES);
     feeds.push({time:nextFeedTime,title:`Feed ${i+2}`,note:'Full feed.',since:nextFeedTime-lastFeed});
     lastFeed=nextFeedTime;
+    lastFullFeedStart=nextFeedTime;
   }
 
-  // final wake window must be at least laterWW.min
-  const finalWakeStart=naps[naps.length-1].end;
-  const nightCapLen=parseInt($('bedTopOffLength').value||'10',10);
-  let nightCapStart=finalWakeStart+laterWW.min;
-  feeds.push({time:nightCapStart,title:'Feed 6',note:(nightCapStart-lastFeed<feedR.min)?'Night cap / partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:nightCapStart-lastFeed});
-  lastFeed=nightCapStart;
+  let bedtimeStart;
+  if(useNap5){
+    const finalWakeStart=naps[naps.length-1].end;
+    let feed6Start=Math.max(finalWakeStart+laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
+    feeds.push({time:feed6Start,title:'Feed 6',note:(feed6Start-lastFeed<feedR.min)?'Night cap / partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:feed6Start-lastFeed});
+    lastFeed=feed6Start;
+    bedtimeStart = feed6Start + TOP_OFF_MINUTES;
+  } else {
+    bedtimeStart = naps[naps.length-1].end + laterWW.min;
+  }
 
   naps.forEach((nap,idx)=>{
     const title=idx===2?'Nap 3 / long afternoon nap':idx===4?'Nap 5 / cat nap':`Nap ${idx+1}`;
@@ -187,28 +186,27 @@ function generateTimeline(){
   });
   feeds.forEach(f=>push(items,f.time,card(f.title,ts(f.time),f.note,'suggested',`${pretty(f.since)} after last feed`)));
 
-  let bedStart=nightCapStart+nightCapLen;
   if($('includeBath').value==='yes'){
     const bathLen=parseInt($('bathLength').value||'10',10);
-    push(items,bedStart,card('Bath',`${ts(bedStart)} – ${ts(bedStart+bathLen)}`,'Optional bath before bed.','routine',pretty(bathLen)));
-    bedStart+=bathLen;
+    push(items,bedtimeStart,card('Bath',`${ts(bedtimeStart)} – ${ts(bedtimeStart+bathLen)}`,'Optional bath before bed.','routine',pretty(bathLen)));
+    bedtimeStart+=bathLen;
   }
   const routineLen=parseInt(($('includeBath').value==='yes'?$('routineLengthBath').value:$('routineLengthNoBath').value)||'15',10);
-  push(items,bedStart,card('Bedtime routine',`${ts(bedStart)} – ${ts(bedStart+routineLen)}`,'Wind-down before bed.','routine',pretty(routineLen)));
-  bedStart+=routineLen;
+  push(items,bedtimeStart,card('Bedtime routine',`${ts(bedtimeStart)} – ${ts(bedtimeStart+routineLen)}`,'Wind-down before bed.','routine',pretty(routineLen)));
+  bedtimeStart+=routineLen;
   if($('includeBedtimeTopOff').value==='yes'){
-    const topLen=parseInt($('bedTopOffLength').value||'10',10);
-    push(items,bedStart,card('Bedtime top-off',`${ts(bedStart)} – ${ts(bedStart+topLen)}`,'Separate option from daytime top-offs.','routine',pretty(topLen)));
-    bedStart+=topLen;
+    const topLen=TOP_OFF_MINUTES;
+    push(items,bedtimeStart,card('Bedtime top-off',`${ts(bedtimeStart)} – ${ts(bedtimeStart+topLen)}`,'Separate option from daytime top-offs.','routine',pretty(topLen)));
+    bedtimeStart+=topLen;
   }
-  push(items,bedStart,card('Goodnight 💤🌙',ts(bedStart),'End of day.','routine'));
+  push(items,bedtimeStart,card('Goodnight 💤🌙',ts(bedtimeStart),'End of day.','routine'));
 
   items.sort((a,b)=>a.t-b.t);
   $('timeline').innerHTML='<div class="timeline">'+items.map(x=>x.html).join('')+'</div>';
   $('nextFeed').textContent=ts((feeds[0]||{time:dream}).time);
   $('firstNapCard').textContent=`${ts(nap1.start)}–${ts(nap1.end)}`;
   $('longNapCard').textContent=`${ts(nap3.start)}–${ts(nap3.end)}`;
-  $('goodnightCard').textContent=ts(bedStart);
+  $('goodnightCard').textContent=ts(bedtimeStart);
   saveState();
 }
 
