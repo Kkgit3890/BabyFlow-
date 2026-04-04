@@ -122,7 +122,7 @@ function generateTimeline(){
   const firstWWc=rv(firstWW), laterWWc=rv(laterWW), firstNapC=rv(firstNapR), regNapC=rv(regNapR);
   const events=[];
 
-  events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'', chipType:'actual'});
+  events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
   events.push({key:'good-morning', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
   let lastFeed = dream, lastFullFeedStart = dream;
