@@ -65,7 +65,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v20';
+const STORAGE_KEY='babyflow_local_v24';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -127,7 +127,8 @@ function generateTimeline(){
 
   let lastFeed = dream, lastFullFeedStart = dream;
 
-  const feed1Projected = Math.max(dream+feedR.min, wake+15);
+  const feed1ProjectedBase = Math.max(dream+feedR.min, wake+15);
+  const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
   const feed1Actual = actuals['feed-1'];
   const feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
   const feed1Allowed = feed1Time <= (wake + firstWW.max);
@@ -144,7 +145,7 @@ function generateTimeline(){
   function pushFeed(key,title,minGap,napEnd,note){
     const actual = actuals[key];
     const t = actual ? actual.time : Math.max(lastFeed+minGap, napEnd, lastFullFeedStart+FULL_FEED_MINUTES);
-    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:'', chipType:'suggested', durationText:pretty(t-lastFeed)+' after last feed'});
+    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:note || 'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(t-lastFeed)+' after last feed'});
     lastFeed = t; lastFullFeedStart = t;
     return t;
   }
@@ -156,11 +157,11 @@ function generateTimeline(){
     return {start:s,end:e};
   }
 
-  const feed2 = pushFeed('feed-2','Feed 2',feedR.min,nap1End,'');
+  const feed2 = pushFeed('feed-2','Feed 2',feedR.min,nap1End,'Full feed.');
   const nap2Dur = Math.max(regNapR.min, Math.min(regNapR.max, 14*60-laterWWc-(nap1End+laterWWc)));
   const nap2 = pushNap('nap-2','Nap 2',nap1End,laterWWc,nap2Dur);
 
-  const feed3 = pushFeed('feed-3','Feed 3',feedR.min,nap2.end,'');
+  const feed3 = pushFeed('feed-3','Feed 3',feedR.min,nap2.end,'Full feed.');
 
   const nap3Actual = actuals['nap-3'];
   let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+FULL_FEED_MINUTES);
@@ -168,7 +169,7 @@ function generateTimeline(){
   events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note:'', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
   const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
-  const feed4 = pushFeed('feed-4','Feed 4',activeLongRange.min,nap3End,($('useLongNapException').value==='yes' && longNapFeedR)?'Full feed using your long nap interval exception.':'');
+  const feed4 = pushFeed('feed-4','Feed 4',activeLongRange.min,nap3End,($('useLongNapException').value==='yes' && longNapFeedR)?'Full feed using your long nap interval exception.':'Full feed.');
 
   const nap4 = pushNap('nap-4','Nap 4',nap3End,laterWWc,regNapC);
 
@@ -176,7 +177,7 @@ function generateTimeline(){
   let bedtimeStart;
 
   if(useNap5){
-    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'');
+    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
     const nap5Actual = actuals['nap-5'];
     let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+FULL_FEED_MINUTES);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
@@ -195,7 +196,7 @@ function generateTimeline(){
     events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' after last feed'});
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
-    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'');
+    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
     const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
     const routineLen = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
     const bedtimeTopLen = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
