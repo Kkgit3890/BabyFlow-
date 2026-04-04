@@ -65,7 +65,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v25';
+const STORAGE_KEY='babyflow_local_v26';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -125,7 +125,7 @@ function generateTimeline(){
   events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
   events.push({key:'good-morning', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
-  let lastFeed = dream, lastFullFeedStart = dream;
+  let lastFeed = dream, lastFullFeedStart = dream, lastFeedLabel = 'Dream feed';
 
   const feed1ProjectedBase = Math.max(dream+feedR.min, wake+15);
   const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
@@ -133,8 +133,8 @@ function generateTimeline(){
   const feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
   const feed1Allowed = feed1Time <= (wake + firstWW.max);
   if(feed1Allowed){
-    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:pretty(feed1Time-lastFeed)+' after last feed'});
-    lastFeed = feed1Time; lastFullFeedStart = feed1Time;
+    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:pretty(feed1Time-lastFeed)+' since '+lastFeedLabel});
+    lastFeed = feed1Time; lastFullFeedStart = feed1Time; lastFeedLabel = 'Feed 1';
   }
 
   const nap1Actual = actuals['nap-1'];
@@ -145,8 +145,8 @@ function generateTimeline(){
   function pushFeed(key,title,minGap,napEnd,note){
     const actual = actuals[key];
     const t = actual ? actual.time : Math.max(lastFeed+minGap, napEnd, lastFullFeedStart+FULL_FEED_MINUTES);
-    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:'', chipType:'suggested', durationText:pretty(t-lastFeed)+' after last feed'});
-    lastFeed = t; lastFullFeedStart = t;
+    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:'', chipType:'suggested', durationText:pretty(t-lastFeed)+' since '+lastFeedLabel});
+    lastFeed = t; lastFullFeedStart = t; lastFeedLabel = title;
     return t;
   }
   function pushNap(key,title,prevNapEnd,ww,duration){
@@ -193,7 +193,8 @@ function generateTimeline(){
     let nightCapStart = nightCapActual ? nightCapActual.time : Math.max(nap5End + laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
     nightCapStart = Math.min(nightCapStart, nap5End + laterWW.max - totalTail);
     nightCapStart = Math.max(nightCapStart, nap5End);
-    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' after last feed'});
+    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' since '+lastFeedLabel});
+    lastFeedLabel = 'Night Cap';
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
     const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
