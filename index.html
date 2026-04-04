@@ -33,11 +33,11 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 <div class="two"><div><label>First wake window</label></div><div><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div></div>
 <div class="two"><div><label>Later wake windows</label></div><div><input id="laterWWRange" value="55-65"><div class="hint" id="laterWWRangeHint"></div></div></div>
-<div class="two"><div><label>First nap</label></div><div><input id="firstNapRange" value="60-75"><div class="hint" id="firstNapRangeHint"></div></div></div>
+<div class="two"><div><label>First nap</label></div><div><input id="firstNapRange" value="50-75"><div class="hint" id="firstNapRangeHint"></div></div></div>
 <div class="two"><div><label>Regular naps</label></div><div><input id="regularNapRange" value="90-120"><div class="hint" id="regularNapRangeHint"></div></div></div>
 <div class="two"><div><label>Long afternoon nap</label></div><div><input id="longNapRange" value="160-180"><div class="hint" id="longNapRangeHint"></div></div></div>
-<div class="two"><div><label>Feed interval</label></div><div><input id="feedRange" value="140-190"><div class="hint" id="feedRangeHint"></div></div></div>
-<div class="two"><div><label>Long nap feed interval exception</label></div><div><input id="longNapFeedRange" value="220-260"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
+<div class="two"><div><label>Feed interval</label></div><div><input id="feedRange" value="140-180"><div class="hint" id="feedRangeHint"></div></div></div>
+<div class="two"><div><label>Long nap feed interval exception</label></div><div><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
 <div class="quad">
 <div><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div><label>Bath</label><select id="includeBath"><option value="yes">Include</option><option value="no" selected>Skip</option></select></div>
@@ -65,15 +65,15 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v19';
+const STORAGE_KEY='babyflow_local_v20';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
-const editableTypes = new Set(['nap','feed']);
+const editableTypes = new Set(['nap','feed','routine']);
 const $=id=>document.getElementById(id);
 const tm=v=>{if(!v||!v.includes(':')) return null; const p=v.split(':').map(Number); return p[0]*60+p[1];};
 const ts=m=>{if(m==null||isNaN(m)) return '—'; m=((m%1440)+1440)%1440; let h=Math.floor(m/60), mi=m%60, ap=h>=12?'PM':'AM'; h=h%12||12; return `${h}:${String(mi).padStart(2,'0')} ${ap}`;};
 const toInputTime=m=>{if(m==null||isNaN(m)) return ''; m=((m%1440)+1440)%1440; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;};
-const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%60; if(!h) return `${mi} minute${mi===1?'':'s'}`; if(!mi) return `${h} hour${h===1?'':'s'}`; return `${h} hour${h===1?'':'s'} ${mi} minute${mi===1?'':'s'}`;};
+const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%60; if(!h) return `${mi} min${mi===1?'':'s'}`; if(!mi) return `${h} hr${h===1?'':'s'}`; return `${h} hr${h===1?'':'s'} ${mi} min${mi===1?'':'s'}`;};
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
@@ -87,7 +87,7 @@ function updateConditionalFields(){ let bathSkip=$('includeBath').value==='no'; 
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields(); }
 function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='60-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-190'; $('longNapFeedRange').value='220-260'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; $('nextFeed').textContent=''; $('firstNapCard').textContent=''; $('longNapCard').textContent=''; $('goodnightCard').textContent=''; }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='200'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; $('nextFeed').textContent=''; $('firstNapCard').textContent=''; $('longNapCard').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll(); $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
@@ -108,7 +108,7 @@ function renderTimeControl(ev){
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div class="inline-grid"><div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div><div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','nap')">Save actual</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     } else {
       const t=hasActual?actuals[ev.key].time:ev.time;
-      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','feed')">Save actual</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
+      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     }
   }
   return `<div class="item"><div class="item-top"><div><div><b>${ev.title}</b></div>${chip(hasActual?'actual':(ev.chipType||'suggested'))}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
@@ -132,14 +132,14 @@ function generateTimeline(){
   const feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
   const feed1Allowed = feed1Time <= (wake + firstWW.max);
   if(feed1Allowed){
-    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(feed1Time-lastFeed)+' after last feed'});
+    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:pretty(feed1Time-lastFeed)+' after last feed'});
     lastFeed = feed1Time; lastFullFeedStart = feed1Time;
   }
 
   const nap1Actual = actuals['nap-1'];
   let nap1Start = nap1Actual ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+FULL_FEED_MINUTES);
   let nap1End = nap1Actual ? nap1Actual.end : nap1Start + firstNapC;
-  events.push({key:'nap-1', type:'nap', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
+  events.push({key:'nap-1', type:'nap', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
   function pushFeed(key,title,minGap,napEnd,note){
     const actual = actuals[key];
@@ -152,7 +152,7 @@ function generateTimeline(){
     const actual = actuals[key];
     let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+FULL_FEED_MINUTES);
     let e = actual ? actual.end : s + duration;
-    events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(e-s)});
+    events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note:'', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
   }
 
@@ -165,7 +165,7 @@ function generateTimeline(){
   const nap3Actual = actuals['nap-3'];
   let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+FULL_FEED_MINUTES);
   let nap3End = nap3Actual ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
-  events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
+  events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note:'', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
   const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
   const feed4 = pushFeed('feed-4','Feed 4',activeLongRange.min,nap3End,($('useLongNapException').value==='yes' && longNapFeedR)?'Full feed using your long nap interval exception.':'Full feed.');
@@ -181,7 +181,7 @@ function generateTimeline(){
     let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+FULL_FEED_MINUTES);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
     let nap5End = nap5Actual ? nap5Actual.end : nap5Start + 45;
-    events.push({key:'nap-5', type:'nap', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
+    events.push({key:'nap-5', type:'nap', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note:'', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
     const nightCapActual = actuals['night-cap'];
     const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
@@ -192,7 +192,7 @@ function generateTimeline(){
     let nightCapStart = nightCapActual ? nightCapActual.time : Math.max(nap5End + laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
     nightCapStart = Math.min(nightCapStart, nap5End + laterWW.max - totalTail);
     nightCapStart = Math.max(nightCapStart, nap5End);
-    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' after last feed'});
+    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' after last feed'});
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
     const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
@@ -213,10 +213,26 @@ function generateTimeline(){
   const bathLen = bathSelected ? parseInt($('bathLength').value||'10',10) : 0;
   const routineLen = parseInt((bathSelected ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
   let tailStart = bedtimeStart;
-  if(bathSelected){ renderItems.push({t:tailStart, html:card('Bath',`${ts(tailStart)} – ${ts(tailStart+bathLen)}`,'Optional bath before bed.','routine',pretty(bathLen))}); tailStart += bathLen; }
-  renderItems.push({t:tailStart, html:card('Bedtime routine',`${ts(tailStart)} – ${ts(tailStart+routineLen)}`,'Wind-down before bed.','routine',pretty(routineLen))}); tailStart += routineLen;
-  if($('includeBedtimeTopOff').value==='yes'){ renderItems.push({t:tailStart, html:card('Bedtime top-off',`${ts(tailStart)} – ${ts(tailStart+TOP_OFF_MINUTES)}`,'Separate option from daytime top-offs.','routine',pretty(TOP_OFF_MINUTES))}); tailStart += TOP_OFF_MINUTES; }
-  renderItems.push({t:tailStart, html:card('Goodnight 💤🌙',ts(tailStart),'End of day.','routine')});
+  if(bathSelected){
+    const bathActual = actuals['bath'];
+    const bathStart = bathActual ? bathActual.time : tailStart;
+    renderItems.push({t:bathStart, html: renderTimeControl({key:'bath', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)})});
+    tailStart = bathStart + bathLen;
+  }
+  const routineActual = actuals['bedtime-routine'];
+  const routineStart = routineActual ? routineActual.time : tailStart;
+  renderItems.push({t:routineStart, html: renderTimeControl({key:'bedtime-routine', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine', durationText:pretty(routineLen)})});
+  tailStart = routineStart + routineLen;
+  if($('includeBedtimeTopOff').value==='yes'){
+    const topActual = actuals['bedtime-topoff'];
+    const topStart = topActual ? topActual.time : tailStart;
+    renderItems.push({t:topStart, html: renderTimeControl({key:'bedtime-topoff', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine', durationText:pretty(TOP_OFF_MINUTES)})});
+    tailStart = topStart + TOP_OFF_MINUTES;
+  }
+  const goodnightActual = actuals['goodnight'];
+  const goodnightTime = goodnightActual ? goodnightActual.time : tailStart;
+  renderItems.push({t:goodnightTime, html: renderTimeControl({key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:'', chipType:'routine'})});
+  tailStart = goodnightTime;
 
   renderItems.sort((a,b)=>a.t-b.t);
   $('timeline').innerHTML='<div class="timeline">'+renderItems.map(x=>x.html).join('')+'</div>';
