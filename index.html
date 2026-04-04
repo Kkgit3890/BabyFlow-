@@ -65,7 +65,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v24';
+const STORAGE_KEY='babyflow_local_v25';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -145,7 +145,7 @@ function generateTimeline(){
   function pushFeed(key,title,minGap,napEnd,note){
     const actual = actuals[key];
     const t = actual ? actual.time : Math.max(lastFeed+minGap, napEnd, lastFullFeedStart+FULL_FEED_MINUTES);
-    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:note || 'Tap the time to log actuals.', chipType:'suggested', durationText:pretty(t-lastFeed)+' after last feed'});
+    events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:'', chipType:'suggested', durationText:pretty(t-lastFeed)+' after last feed'});
     lastFeed = t; lastFullFeedStart = t;
     return t;
   }
