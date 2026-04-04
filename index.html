@@ -73,7 +73,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v17';
+const STORAGE_KEY='babyflow_local_v18';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const $=id=>document.getElementById(id);
 const tm=v=>{if(!v||!v.includes(':')) return null; const p=v.split(':').map(Number); return p[0]*60+p[1];};
@@ -126,14 +126,26 @@ function generateTimeline(){
     if(!tm($('nap5End').value)) nap5.end=nap5.start+45;
     naps.push(nap5);
 
-    const latestNightCapStart = nap5.end + laterWW.max - NIGHT_CAP_MINUTES;
-    let nightCapStart = Math.max(nap5.end + laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
+    const bathLenForCap = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
+    const routineLenForCap = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
+    const bedtimeTopOffLenForCap = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
+    const totalTailAfterNap5 = NIGHT_CAP_MINUTES + bathLenForCap + routineLenForCap + bedtimeTopOffLenForCap;
+
+    let nightCapStart = Math.max(nap5.end, lastFullFeedStart + FULL_FEED_MINUTES, nap5.end + laterWW.min - totalTailAfterNap5);
+    let latestNightCapStart = nap5.end + laterWW.max - totalTailAfterNap5;
     nightCapStart = Math.min(nightCapStart, latestNightCapStart);
-    nightCapStart = Math.max(nightCapStart, nap5.end + laterWW.min);
+    if (nightCapStart < nap5.end) nightCapStart = nap5.end;
+
     feeds.push({time:nightCapStart,title:'Night Cap',note:(nightCapStart-lastFeed<feedR.min)?'Partial feed since it has been less than your minimum full-feed interval.':'Full feed.',since:nightCapStart-lastFeed});
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
-    const feed5 = Math.max(lastFeed+feedR.min, nap4.end, lastFullFeedStart+FULL_FEED_MINUTES); feeds.push({time:feed5,title:'Feed 5',note:'Full feed.',since:feed5-lastFeed}); bedtimeStart=Math.max(nap4.end+laterWW.min, feed5+FULL_FEED_MINUTES); bedtimeStart=Math.min(bedtimeStart, nap4.end+laterWW.max);
+    const feed5 = Math.max(lastFeed+feedR.min, nap4.end, lastFullFeedStart+FULL_FEED_MINUTES); feeds.push({time:feed5,title:'Feed 5',note:'Full feed.',since:feed5-lastFeed});
+    const bathLenForCap = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
+    const routineLenForCap = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
+    const bedtimeTopOffLenForCap = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
+    const totalTailAfterNap4 = bathLenForCap + routineLenForCap + bedtimeTopOffLenForCap;
+    bedtimeStart=Math.max(nap4.end, feed5+FULL_FEED_MINUTES, nap4.end+laterWW.min-totalTailAfterNap4);
+    bedtimeStart=Math.min(bedtimeStart, nap4.end+laterWW.max-totalTailAfterNap4);
   }
 
   const items=[]; push(items,dream,card('Dream feed',ts(dream),'Starting point for feeds for the day.','actual')); push(items,wake,card('Good morning ☀️',ts(wake),'Start of day.','actual'));
