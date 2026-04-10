@@ -98,7 +98,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v40';
+const STORAGE_KEY='babyflow_local_v41';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -254,20 +254,18 @@ function generateTimeline(){
 
   if($('useLongNapException').value==='yes' && !actuals['feed-3']){
     const feed3Event = events.find(ev => ev.key === 'feed-3');
+    const feed2Event = events.find(ev => ev.key === 'feed-2');
     const latestAllowedFeed3 = nap3End - activeLongRange.max;
     const latestPossibleFeed3 = nap3Start - FULL_FEED_MINUTES;
-    let adjustedFeed3 = Math.max(feed2Time + feedR.min, latestAllowedFeed3);
+    let adjustedFeed3 = Math.max(feed2Event ? feed2Event.time + feedR.min : 0, latestAllowedFeed3);
     adjustedFeed3 = Math.min(adjustedFeed3, latestPossibleFeed3);
 
-    if(adjustedFeed3 > feed3Time && (nap3End - adjustedFeed3) <= activeLongRange.max){
-      feed3Time = adjustedFeed3;
-      if(feed3Event){
-        feed3Event.time = feed3Time;
-        feed3Event.displayTime = ts(feed3Time);
-        feed3Event.durationText = pretty(feed3Time - feed2Time) + ' since Feed 2';
-      }
-      lastFeed = feed3Time;
-      lastFullFeedStart = feed3Time;
+    if(feed3Event && adjustedFeed3 > feed3Event.time && (nap3End - adjustedFeed3) <= activeLongRange.max){
+      feed3Event.time = adjustedFeed3;
+      feed3Event.displayTime = ts(adjustedFeed3);
+      feed3Event.durationText = pretty(adjustedFeed3 - (feed2Event ? feed2Event.time : 0)) + ' since Feed 2';
+      lastFeed = adjustedFeed3;
+      lastFullFeedStart = adjustedFeed3;
       lastFeedLabel = 'Feed 3';
     }
   }
