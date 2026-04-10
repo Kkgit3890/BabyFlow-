@@ -89,7 +89,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v38';
+const STORAGE_KEY='babyflow_local_v39';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -221,7 +221,8 @@ function generateTimeline(){
     const actual = actuals[key];
     let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+FULL_FEED_MINUTES);
     let e = actual ? actual.end : s + duration;
-    events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note:'', chipType:'suggested', durationText:pretty(e-s)});
+    const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
+    events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `${pretty(s-prevNap.end)} since ${prevNap.title}` : '', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
   }
 
@@ -234,7 +235,8 @@ function generateTimeline(){
   const nap3Actual = actuals['nap-3'];
   let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+FULL_FEED_MINUTES);
   let nap3End = nap3Actual ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
-  events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note:'', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
+  const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
+  events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `${pretty(nap3Start-prevNapForNap3.end)} since ${prevNapForNap3.title}` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
   const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
 
@@ -272,7 +274,8 @@ function generateTimeline(){
     let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+FULL_FEED_MINUTES);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
     let nap5End = nap5Actual ? nap5Actual.end : nap5Start + 45;
-    events.push({key:'nap-5', type:'nap', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note:'', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
+    const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
+    events.push({key:'nap-5', type:'nap', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `${pretty(nap5Start-prevNapForNap5.end)} since ${prevNapForNap5.title}` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
     const nightCapActual = actuals['night-cap'];
     const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
