@@ -86,7 +86,17 @@ function loadStoredActuals(){ try{ const raw=localStorage.getItem(STORAGE_KEY+'_
 function saveActuals(){ localStorage.setItem(STORAGE_KEY+'_actuals', JSON.stringify(actuals)); }
 function clearActuals(){ Object.keys(actuals).forEach(k=>delete actuals[k]); localStorage.removeItem(STORAGE_KEY+'_actuals'); }
 
-function updateConditionalFields(){ let bathSkip=$('includeBath').value==='no'; $('bathLengthWrap').classList.toggle('hidden',bathSkip); $('routineLengthBathWrap').classList.toggle('hidden',bathSkip); $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no'); $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no'); }
+function updateConditionalFields(){
+  let bathSkip=$('includeBath').value==='no';
+  $('bathLengthWrap').classList.toggle('hidden',bathSkip);
+  $('routineLengthBathWrap').classList.toggle('hidden',bathSkip);
+  const noBathField = $('routineLengthNoBath');
+  if(noBathField && noBathField.parentElement && noBathField.parentElement.parentElement){
+    noBathField.parentElement.parentElement.classList.toggle('hidden', !bathSkip);
+  }
+  $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');
+  $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no');
+}
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields(); }
 function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
@@ -114,7 +124,8 @@ function renderTimeControl(ev){
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     }
   }
-  return `<div class="item"><div class="item-top"><div><div><b>${ev.title}</b></div>${chip(hasActual?'actual':(ev.chipType||'suggested'))}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
+  const itemClass = ev.type==='nap' ? 'nap-item' : (ev.type==='feed' ? 'feed-item' : 'routine-item');
+  return `<div class="item ${itemClass}"><div class="item-top"><div><div><b>${ev.title}</b></div>${chip(hasActual?'actual':(ev.chipType||'suggested'))}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
 }
 
 
@@ -297,7 +308,21 @@ function generateTimeline(){
   tailStart = goodnightTime;
 
   renderItems.sort((a,b)=>a.t-b.t);
-  $('timeline').innerHTML='<div class="timeline">'+renderItems.map(x=>x.html).join('')+'</div>';
+  const classified = [];
+  let lastSection = '';
+  for (const item of renderItems){
+    const htmlText = item.html;
+    let section = 'Routine';
+    if (htmlText.includes('feed-item')) section = 'Feeds';
+    else if (htmlText.includes('nap-item')) section = 'Naps';
+    else if (htmlText.includes('routine-item')) section = 'Routines';
+    if (section !== lastSection){
+      classified.push(`<div class="section-title">${section}</div>`);
+      lastSection = section;
+    }
+    classified.push(item.html);
+  }
+  $('timeline').innerHTML='<div class="timeline">'+classified.join('')+'</div>';
 
   const nextProjectedFeed = events.find(ev=>ev.type==='feed' && ev.key!=='dream-feed');
   $('nextFeed').textContent = nextProjectedFeed ? nextProjectedFeed.displayTime : '';
