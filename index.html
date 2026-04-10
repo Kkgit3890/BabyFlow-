@@ -89,7 +89,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v37';
+const STORAGE_KEY='babyflow_local_v38';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -112,8 +112,9 @@ function updateConditionalFields(){
   $('bathLengthWrap').classList.toggle('hidden',bathSkip);
   $('routineLengthBathWrap').classList.toggle('hidden',bathSkip);
   const noBathField = $('routineLengthNoBath');
-  if(noBathField && noBathField.parentElement && noBathField.parentElement.parentElement){
-    noBathField.parentElement.parentElement.classList.toggle('hidden', !bathSkip);
+  if(noBathField){
+    const noBathWrap = noBathField.closest('.field') || noBathField.parentElement;
+    if(noBathWrap) noBathWrap.classList.toggle('hidden', !bathSkip);
   }
   $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');
   $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no');
