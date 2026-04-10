@@ -14,6 +14,7 @@ body{margin:0;padding:18px;color:var(--text);font-family:-apple-system,BlinkMacS
 label{display:block;font-size:14px;font-weight:700;line-height:1.15;margin:0 0 2px}
 input,select{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:14px;font-size:16px;background:#fff;color:var(--text)}
 .field{margin-bottom:14px}
+.quad .field{margin-bottom:18px}
 .section-gap{margin-bottom:26px}
 .field:first-of-type{margin-top:10px}
 .section-title{margin-bottom:6px}
@@ -56,23 +57,31 @@ details.advanced[open]{background:#fff}
 <details class="advanced" open>
 <summary>Advanced settings</summary>
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
+
 <div class="grid">
 <div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div id="dreamFeedWrap" class="field"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
 </div>
-<div id="longNapExceptionWrap" class="two"><div><label>Long nap feed interval exception</label></div><div class="field"><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
+
 <div class="quad">
 <div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
-<div class="field"><label>Bath</label><select id="includeBath"><option value="yes">Include</option><option value="no" selected>Skip</option></select></div>
-<div class="field"><label>Bedtime top-off</label><select id="includeBedtimeTopOff"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
+<div id="longNapExceptionWrap" class="field"><label>Long nap feed interval exception</label><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
+<div class="field"><label>Bath</label><select id="includeBath"><option value="yes">Include</option><option value="no" selected>Skip</option></select></div>
 </div>
-<div class="triple">
+
+<div class="grid">
 <div id="bathLengthWrap" class="field"><label>Bath length (min)</label><input id="bathLength" type="number" value="10"><div class="hint" id="bathLengthHint"></div></div>
 <div id="routineLengthBathWrap" class="field"><label>After-bath routine (min)</label><input id="routineLengthBath" type="number" value="10"><div class="hint" id="routineLengthBathHint"></div></div>
+</div>
+<div class="grid">
 <div class="field"><label>Routine without bath (min)</label><input id="routineLengthNoBath" type="number" value="15"><div class="hint" id="routineLengthNoBathHint"></div></div>
 </div>
-<div class="grid"><div id="bedTopOffLengthWrap" class="field"><label>Bedtime top-off (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div></div>
+
+<div class="grid">
+<div class="field"><label>Bedtime top-off</label><select id="includeBedtimeTopOff"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
+<div id="bedTopOffLengthWrap" class="field"><label>Bedtime top-off length (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div>
+</div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
 <div class="hint" id="saveStatus">Tap a time in the timeline to log actual times and recalculate the rest of the day.</div>
@@ -89,7 +98,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v39';
+const STORAGE_KEY='babyflow_local_v40';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -111,13 +120,16 @@ function updateConditionalFields(){
   let bathSkip=$('includeBath').value==='no';
   $('bathLengthWrap').classList.toggle('hidden',bathSkip);
   $('routineLengthBathWrap').classList.toggle('hidden',bathSkip);
+
   const noBathField = $('routineLengthNoBath');
   if(noBathField){
     const noBathWrap = noBathField.closest('.field') || noBathField.parentElement;
     if(noBathWrap) noBathWrap.classList.toggle('hidden', !bathSkip);
   }
+
   $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');
   $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no');
+
   const longNapWrap = $('longNapExceptionWrap');
   if(longNapWrap){
     longNapWrap.classList.toggle('hidden', $('useLongNapException').value==='no');
