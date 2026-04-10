@@ -14,6 +14,7 @@ body{margin:0;padding:18px;color:var(--text);font-family:-apple-system,BlinkMacS
 label{display:block;font-size:14px;font-weight:700;line-height:1.15;margin:0 0 2px}
 input,select{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:14px;font-size:16px;background:#fff;color:var(--text)}
 .field{margin-bottom:14px}
+.section-gap{margin-bottom:26px}
 .field:first-of-type{margin-top:10px}
 .section-title{margin-bottom:6px}
 .field .hint{margin-top:2px}
@@ -44,14 +45,14 @@ details.advanced[open]{background:#fff}
 <div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule template</div>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
-<div class="field"><label>Good morning ☀️ time</label><input id="wakeTime" type="time"></div>
+<div class="field section-gap"><label>Good morning ☀️ time</label><input id="wakeTime" type="time"></div>
 </div>
-<div class="field"><label>First wake window</label><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div>
-<div class="field"><label>Later wake windows</label><input id="laterWWRange" value="55-65"><div class="hint" id="laterWWRangeHint"></div></div>
-<div class="field"><label>First nap</label><input id="firstNapRange" value="50-75"><div class="hint" id="firstNapRangeHint"></div></div>
-<div class="field"><label>Regular naps</label><input id="regularNapRange" value="90-120"><div class="hint" id="regularNapRangeHint"></div></div>
-<div class="field"><label>Long afternoon nap</label><input id="longNapRange" value="160-180"><div class="hint" id="longNapRangeHint"></div></div>
-<div class="field"><label>Feed interval</label><input id="feedRange" value="140-180"><div class="hint" id="feedRangeHint"></div></div>
+<div class="field section-gap"><label>First wake window</label><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div>
+<div class="field section-gap"><label>Later wake windows</label><input id="laterWWRange" value="55-65"><div class="hint" id="laterWWRangeHint"></div></div>
+<div class="field section-gap"><label>First nap</label><input id="firstNapRange" value="50-75"><div class="hint" id="firstNapRangeHint"></div></div>
+<div class="field section-gap"><label>Regular naps</label><input id="regularNapRange" value="90-120"><div class="hint" id="regularNapRangeHint"></div></div>
+<div class="field section-gap"><label>Long afternoon nap</label><input id="longNapRange" value="160-180"><div class="hint" id="longNapRangeHint"></div></div>
+<div class="field section-gap"><label>Feed interval</label><input id="feedRange" value="140-180"><div class="hint" id="feedRangeHint"></div></div>
 <details class="advanced" open>
 <summary>Advanced settings</summary>
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
@@ -59,7 +60,7 @@ details.advanced[open]{background:#fff}
 <div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div id="dreamFeedWrap" class="field"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
 </div>
-<div class="two"><div><label>Long nap feed interval exception</label></div><div class="field"><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
+<div id="longNapExceptionWrap" class="two"><div><label>Long nap feed interval exception</label></div><div class="field"><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
 <div class="quad">
 <div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div class="field"><label>Bath</label><select id="includeBath"><option value="yes">Include</option><option value="no" selected>Skip</option></select></div>
@@ -88,7 +89,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v36';
+const STORAGE_KEY='babyflow_local_v37';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -116,6 +117,10 @@ function updateConditionalFields(){
   }
   $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');
   $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no');
+  const longNapWrap = $('longNapExceptionWrap');
+  if(longNapWrap){
+    longNapWrap.classList.toggle('hidden', $('useLongNapException').value==='no');
+  }
 }
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields(); }
 function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
