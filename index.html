@@ -117,6 +117,7 @@ function renderTimeControl(ev){
   return `<div class="item"><div class="item-top"><div><div><b>${ev.title}</b></div>${chip(hasActual?'actual':(ev.chipType||'suggested'))}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
 }
 
+
 function generateTimeline(){
   updateHints();
   const useDreamFeed=$('useDreamFeed').value==='yes';
@@ -131,22 +132,37 @@ function generateTimeline(){
   }
   events.push({key:'good-morning', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
-  let lastFeed = useDreamFeed ? dream : null, lastFullFeedStart = useDreamFeed ? dream : null, lastFeedLabel = useDreamFeed ? 'Dream feed' : 'Feed 1';
+  let lastFeed = useDreamFeed ? dream : null;
+  let lastFullFeedStart = useDreamFeed ? dream : null;
+  let lastFeedLabel = useDreamFeed ? 'Dream feed' : 'Feed 1';
 
   const feed1Actual = actuals['feed-1'];
   let feed1Time;
   let feed1Allowed = true;
+
   if(useDreamFeed){
-    const feed1ProjectedBase = Math.max(dream+feedR.min, wake+15);
+    const feed1ProjectedBase = Math.max(dream + feedR.min, wake + 15);
     const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
     feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
     feed1Allowed = feed1Time <= (wake + firstWW.max);
   } else {
     feed1Time = feed1Actual ? feed1Actual.time : wake;
   }
+
   if(feed1Allowed){
-    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:useDreamFeed ? pretty(feed1Time-lastFeed)+' since '+lastFeedLabel : ''});
-    lastFeed = feed1Time; lastFullFeedStart = feed1Time; lastFeedLabel = 'Feed 1';
+    events.push({
+      key:'feed-1',
+      type:'feed',
+      title:'Feed 1',
+      time:feed1Time,
+      displayTime:ts(feed1Time),
+      note:'',
+      chipType:'suggested',
+      durationText:useDreamFeed ? pretty(feed1Time-lastFeed)+' since '+lastFeedLabel : ''
+    });
+    lastFeed = feed1Time;
+    lastFullFeedStart = feed1Time;
+    lastFeedLabel = 'Feed 1';
   }
 
   const nap1Actual = actuals['nap-1'];
@@ -154,13 +170,16 @@ function generateTimeline(){
   let nap1End = nap1Actual ? nap1Actual.end : nap1Start + firstNapC;
   events.push({key:'nap-1', type:'nap', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
-  function pushFeed(key,title,minGap,napEnd,note){
+  function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
-    const t = actual ? actual.time : Math.max(lastFeed+minGap, napEnd, lastFullFeedStart+FULL_FEED_MINUTES);
+    const t = actual ? actual.time : Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + FULL_FEED_MINUTES);
     events.push({key, type:'feed', title, time:t, displayTime:ts(t), note:'', chipType:'suggested', durationText:pretty(t-lastFeed)+' since '+lastFeedLabel});
-    lastFeed = t; lastFullFeedStart = t; lastFeedLabel = title;
+    lastFeed = t;
+    lastFullFeedStart = t;
+    lastFeedLabel = title;
     return t;
   }
+
   function pushNap(key,title,prevNapEnd,ww,duration){
     const actual = actuals[key];
     let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+FULL_FEED_MINUTES);
@@ -169,11 +188,11 @@ function generateTimeline(){
     return {start:s,end:e};
   }
 
-  const feed2 = pushFeed('feed-2','Feed 2',feedR.min,nap1End,'Full feed.');
+  pushFeed('feed-2','Feed 2',feedR.min,nap1End);
   const nap2Dur = Math.max(regNapR.min, Math.min(regNapR.max, 14*60-laterWWc-(nap1End+laterWWc)));
   const nap2 = pushNap('nap-2','Nap 2',nap1End,laterWWc,nap2Dur);
 
-  const feed3 = pushFeed('feed-3','Feed 3',feedR.min,nap2.end,'Full feed.');
+  pushFeed('feed-3','Feed 3',feedR.min,nap2.end);
 
   const nap3Actual = actuals['nap-3'];
   let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+FULL_FEED_MINUTES);
@@ -181,7 +200,7 @@ function generateTimeline(){
   events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note:'', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
   const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
-  const feed4 = pushFeed('feed-4','Feed 4',activeLongRange.min,nap3End,($('useLongNapException').value==='yes' && longNapFeedR)?'Full feed using your long nap interval exception.':'Full feed.');
+  pushFeed('feed-4','Feed 4',activeLongRange.min,nap3End);
 
   const nap4 = pushNap('nap-4','Nap 4',nap3End,laterWWc,regNapC);
 
@@ -189,7 +208,8 @@ function generateTimeline(){
   let bedtimeStart;
 
   if(useNap5){
-    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
+    pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
+
     const nap5Actual = actuals['nap-5'];
     let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+FULL_FEED_MINUTES);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
@@ -205,11 +225,14 @@ function generateTimeline(){
     let nightCapStart = nightCapActual ? nightCapActual.time : Math.max(nap5End + laterWW.min, lastFullFeedStart + FULL_FEED_MINUTES);
     nightCapStart = Math.min(nightCapStart, nap5End + laterWW.max - totalTail);
     nightCapStart = Math.max(nightCapStart, nap5End);
+
     events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, displayTime:ts(nightCapStart), note:'', chipType:'suggested', durationText:pretty(nightCapStart-lastFeed)+' since '+lastFeedLabel});
+    lastFeed = nightCapStart;
     lastFeedLabel = 'Night Cap';
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
   } else {
-    const feed5 = pushFeed('feed-5','Feed 5',feedR.min,nap4.end,'Full feed.');
+    pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
+
     const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
     const routineLen = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
     const bedtimeTopLen = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
@@ -227,22 +250,26 @@ function generateTimeline(){
   const bathLen = bathSelected ? parseInt($('bathLength').value||'10',10) : 0;
   const routineLen = parseInt((bathSelected ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
   let tailStart = bedtimeStart;
+
   if(bathSelected){
     const bathActual = actuals['bath'];
     const bathStart = bathActual ? bathActual.time : tailStart;
     renderItems.push({t:bathStart, html: renderTimeControl({key:'bath', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)})});
     tailStart = bathStart + bathLen;
   }
+
   const routineActual = actuals['bedtime-routine'];
   const routineStart = routineActual ? routineActual.time : tailStart;
   renderItems.push({t:routineStart, html: renderTimeControl({key:'bedtime-routine', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine', durationText:pretty(routineLen)})});
   tailStart = routineStart + routineLen;
+
   if($('includeBedtimeTopOff').value==='yes'){
     const topActual = actuals['bedtime-topoff'];
     const topStart = topActual ? topActual.time : tailStart;
     renderItems.push({t:topStart, html: renderTimeControl({key:'bedtime-topoff', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine', durationText:pretty(TOP_OFF_MINUTES)})});
     tailStart = topStart + TOP_OFF_MINUTES;
   }
+
   const goodnightActual = actuals['goodnight'];
   const goodnightTime = goodnightActual ? goodnightActual.time : tailStart;
   renderItems.push({t:goodnightTime, html: renderTimeControl({key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:'', chipType:'routine'})});
@@ -260,7 +287,6 @@ function generateTimeline(){
   $('goodnightCard').textContent = ts(tailStart);
   saveState();
 }
-
 window.addEventListener('DOMContentLoaded',()=>{ loadState(); loadStoredActuals(); updateHints(); ['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength'].forEach(id=>{$(id).addEventListener('change',()=>{saveState();updateHints();});$(id).addEventListener('input',updateHints);}); });
 </script>
 </body></html>
