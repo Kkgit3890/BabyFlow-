@@ -28,7 +28,10 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 <h2>BabyFlow</h2>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
-<div><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
+<div><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+<div id="dreamFeedWrap"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
+</div>
+<div class="grid">
 <div><label>Good morning ☀️ time</label><input id="wakeTime" type="time"></div>
 </div>
 <div class="two"><div><label>First wake window</label></div><div><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div></div>
@@ -83,12 +86,12 @@ function loadStoredActuals(){ try{ const raw=localStorage.getItem(STORAGE_KEY+'_
 function saveActuals(){ localStorage.setItem(STORAGE_KEY+'_actuals', JSON.stringify(actuals)); }
 function clearActuals(){ Object.keys(actuals).forEach(k=>delete actuals[k]); localStorage.removeItem(STORAGE_KEY+'_actuals'); }
 
-function updateConditionalFields(){ let bathSkip=$('includeBath').value==='no'; $('bathLengthWrap').classList.toggle('hidden',bathSkip); $('routineLengthBathWrap').classList.toggle('hidden',bathSkip); $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no'); }
+function updateConditionalFields(){ let bathSkip=$('includeBath').value==='no'; $('bathLengthWrap').classList.toggle('hidden',bathSkip); $('routineLengthBathWrap').classList.toggle('hidden',bathSkip); $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no'); $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no'); }
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint']].forEach(([i,h])=>$(h).textContent=pretty(parseInt($(i).value||'0',10))); updateConditionalFields(); }
-function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
+function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='200'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; $('nextFeed').textContent=''; $('firstNapCard').textContent=''; $('longNapCard').textContent=''; $('goodnightCard').textContent=''; }
-function loadExample(){ clearAll(); $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='yes'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='200'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; $('nextFeed').textContent=''; $('firstNapCard').textContent=''; $('longNapCard').textContent=''; $('goodnightCard').textContent=''; }
+function loadExample(){ clearAll(); $('useDreamFeed').value='yes'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 function saveEventActual(key,type){
@@ -116,24 +119,33 @@ function renderTimeControl(ev){
 
 function generateTimeline(){
   updateHints();
+  const useDreamFeed=$('useDreamFeed').value==='yes';
   const dream=tm($('dreamFeedTime').value), wake=tm($('wakeTime').value), firstWW=rng($('firstWWRange').value), laterWW=rng($('laterWWRange').value), firstNapR=rng($('firstNapRange').value), regNapR=rng($('regularNapRange').value), longNapR=rng($('longNapRange').value), feedR=rng($('feedRange').value), longNapFeedR=rng($('longNapFeedRange').value);
-  if([dream,wake,firstWW,laterWW,firstNapR,regNapR,longNapR,feedR].some(v=>v==null)){ $('timeline').innerHTML='Please enter a dream feed time and wake time, and make sure all template fields are filled in correctly.'; return; }
+  if(([wake,firstWW,laterWW,firstNapR,regNapR,longNapR,feedR].some(v=>v==null)) || (useDreamFeed && dream==null)){ $('timeline').innerHTML='Please enter your wake time and make sure all template fields are filled in correctly.'; return; }
 
   const firstWWc=rv(firstWW), laterWWc=rv(laterWW), firstNapC=rv(firstNapR), regNapC=rv(regNapR);
   const events=[];
 
-  events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
+  if(useDreamFeed){
+    events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
+  }
   events.push({key:'good-morning', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
-  let lastFeed = dream, lastFullFeedStart = dream, lastFeedLabel = 'Dream feed';
+  let lastFeed = useDreamFeed ? dream : null, lastFullFeedStart = useDreamFeed ? dream : null, lastFeedLabel = useDreamFeed ? 'Dream feed' : 'Feed 1';
 
-  const feed1ProjectedBase = Math.max(dream+feedR.min, wake+15);
-  const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
   const feed1Actual = actuals['feed-1'];
-  const feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
-  const feed1Allowed = feed1Time <= (wake + firstWW.max);
+  let feed1Time;
+  let feed1Allowed = true;
+  if(useDreamFeed){
+    const feed1ProjectedBase = Math.max(dream+feedR.min, wake+15);
+    const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
+    feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
+    feed1Allowed = feed1Time <= (wake + firstWW.max);
+  } else {
+    feed1Time = feed1Actual ? feed1Actual.time : wake;
+  }
   if(feed1Allowed){
-    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:pretty(feed1Time-lastFeed)+' since '+lastFeedLabel});
+    events.push({key:'feed-1', type:'feed', title:'Feed 1', time:feed1Time, displayTime:ts(feed1Time), note:'', chipType:'suggested', durationText:useDreamFeed ? pretty(feed1Time-lastFeed)+' since '+lastFeedLabel : ''});
     lastFeed = feed1Time; lastFullFeedStart = feed1Time; lastFeedLabel = 'Feed 1';
   }
 
@@ -249,6 +261,6 @@ function generateTimeline(){
   saveState();
 }
 
-window.addEventListener('DOMContentLoaded',()=>{ loadState(); loadStoredActuals(); updateHints(); ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength'].forEach(id=>{$(id).addEventListener('change',()=>{saveState();updateHints();});$(id).addEventListener('input',updateHints);}); });
+window.addEventListener('DOMContentLoaded',()=>{ loadState(); loadStoredActuals(); updateHints(); ['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength'].forEach(id=>{$(id).addEventListener('change',()=>{saveState();updateHints();});$(id).addEventListener('input',updateHints);}); });
 </script>
 </body></html>
