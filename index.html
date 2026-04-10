@@ -36,10 +36,6 @@ details.advanced[open]{background:#fff}
 <h2>BabyFlow</h2>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
-<div><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
-<div id="dreamFeedWrap"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
-</div>
-<div class="grid">
 <div><label>Good morning ☀️ time</label><input id="wakeTime" type="time"></div>
 </div>
 <div class="two"><div><label>First wake window</label></div><div><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div></div>
@@ -50,7 +46,11 @@ details.advanced[open]{background:#fff}
 <div class="two"><div><label>Feed interval</label></div><div><input id="feedRange" value="140-180"><div class="hint" id="feedRangeHint"></div></div></div>
 <details class="advanced" open>
 <summary>Advanced settings</summary>
-<div class="hint">Less-used settings for long nap exceptions and bedtime flow.</div>
+<div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
+<div class="grid">
+<div><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+<div id="dreamFeedWrap"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
+</div>
 <div class="two"><div><label>Long nap feed interval exception</label></div><div><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div></div>
 <div class="quad">
 <div><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
@@ -80,7 +80,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v31c';
+const STORAGE_KEY='babyflow_local_v32';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
