@@ -98,7 +98,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v42';
+const STORAGE_KEY='babyflow_local_v43';
 const FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const editableTypes = new Set(['nap','feed','routine']);
@@ -267,6 +267,18 @@ function generateTimeline(){
       lastFeed = adjustedFeed3;
       lastFullFeedStart = adjustedFeed3;
       lastFeedLabel = 'Feed 3';
+      feed3Time = adjustedFeed3;
+    }
+  }
+
+  if($('useLongNapException').value==='no' && !actuals['nap-3']){
+    const nap3Event = events.find(ev => ev.key === 'nap-3');
+    const latestAllowedNap3End = lastFeed + feedR.max;
+    if(nap3Event && latestAllowedNap3End < nap3End){
+      nap3End = Math.max(nap3Start, latestAllowedNap3End);
+      nap3Event.end = nap3End;
+      nap3Event.displayTime = `${ts(nap3Start)} – ${ts(nap3End)}`;
+      nap3Event.durationText = pretty(nap3End - nap3Start);
     }
   }
 
