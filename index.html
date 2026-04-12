@@ -121,7 +121,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v50';
+const STORAGE_KEY='babyflow_local_v51';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const uiState = { collapsePast:false };
@@ -469,7 +469,7 @@ function generateTimeline(){
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed'){
       const digestStart = ev.end!=null ? ev.end : ev.time;
-      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, type:'feed', title:'Upright to digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'routine', durationText:pretty(digestLength)}});
+      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, type:'feed', title:'Upright to digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
     }
   });
 
