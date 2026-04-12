@@ -49,6 +49,17 @@ details.advanced[open]{background:#fff}
 <div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule template</div>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
+  <div class="field"><label>Selected day</label><input id="selectedDate" type="date"></div>
+  <div class="field">
+    <label>&nbsp;</label>
+    <div class="row" style="margin-top:0">
+      <button class="secondary small-btn" onclick="shiftDate(-1)">Previous day</button>
+      <button class="secondary small-btn" onclick="goToToday()">Today</button>
+      <button class="secondary small-btn" onclick="shiftDate(1)">Next day</button>
+    </div>
+  </div>
+</div>
+<div class="grid">
 <div class="field section-gap"><label>Good morning ☀️ time</label><input id="wakeTime" type="time"></div>
 </div>
 <div class="field section-gap"><label>First wake window</label><input id="firstWWRange" value="40-45"><div class="hint" id="firstWWRangeHint"></div></div>
@@ -106,7 +117,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v46';
+const STORAGE_KEY='babyflow_local_v47';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const uiState = { collapsePast:false };
@@ -123,17 +134,38 @@ const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;
 
+function getSelectedDateStr(){
+  return $('selectedDate')?.value || new Date().toISOString().slice(0,10);
+}
+function getDaysStore(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY+'_days') || '{}') || {}; }catch(e){ return {}; }
+}
+function saveDaysStore(store){
+  localStorage.setItem(STORAGE_KEY+'_days', JSON.stringify(store));
+}
 function loadStoredActuals(){
-  try{ const raw=localStorage.getItem(STORAGE_KEY+'_actuals'); if(raw) Object.assign(actuals, JSON.parse(raw)||{}); }catch(e){}
+  const days = getDaysStore();
+  const day = days[getSelectedDateStr()] || {};
+  Object.keys(actuals).forEach(k=>delete actuals[k]);
+  Object.assign(actuals, day.actuals || {});
   try{ const rawUI=localStorage.getItem(STORAGE_KEY+'_ui'); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
 }
 function saveActuals(){
-  localStorage.setItem(STORAGE_KEY+'_actuals', JSON.stringify(actuals));
+  const days = getDaysStore();
+  const key = getSelectedDateStr();
+  days[key] = days[key] || {};
+  days[key].actuals = JSON.parse(JSON.stringify(actuals));
+  saveDaysStore(days);
   localStorage.setItem(STORAGE_KEY+'_ui', JSON.stringify(uiState));
 }
 function clearActuals(){
   Object.keys(actuals).forEach(k=>delete actuals[k]);
-  localStorage.removeItem(STORAGE_KEY+'_actuals');
+  const days = getDaysStore();
+  const key = getSelectedDateStr();
+  if(days[key]){
+    days[key].actuals = {};
+    saveDaysStore(days);
+  }
   localStorage.removeItem(STORAGE_KEY+'_ui');
   uiState.collapsePast = false;
   recalcFromKey = null;
@@ -164,6 +196,19 @@ function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstW
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
 function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='yes'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='200'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; $('trackFeedDurations').value='no'; $('fullFeedLength').value='20'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll(); $('useDreamFeed').value='yes'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
+function goToToday(){
+  const d = new Date();
+  $('selectedDate').value = d.toISOString().slice(0,10);
+  loadStoredActuals();
+  generateTimeline();
+}
+function shiftDate(days){
+  const current = $('selectedDate').value ? new Date($('selectedDate').value + 'T00:00:00') : new Date();
+  current.setDate(current.getDate() + days);
+  $('selectedDate').value = current.toISOString().slice(0,10);
+  loadStoredActuals();
+  generateTimeline();
+}
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 function saveEventActual(key,type){
@@ -528,6 +573,18 @@ function generateTimeline(){
   $('goodnightCard').textContent = ts(tailStart);
   saveState();
 }
-window.addEventListener('DOMContentLoaded',()=>{ loadState(); loadStoredActuals(); updateHints(); ['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','trackFeedDurations','fullFeedLength'].forEach(id=>{$(id).addEventListener('change',()=>{saveState();updateHints();});$(id).addEventListener('input',updateHints);}); });
+window.addEventListener('DOMContentLoaded',()=>{
+  loadState();
+  if(!$('selectedDate').value){
+    $('selectedDate').value = new Date().toISOString().slice(0,10);
+  }
+  loadStoredActuals();
+  updateHints();
+  ['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','trackFeedDurations','fullFeedLength'].forEach(id=>{
+    $(id).addEventListener('change',()=>{saveState();updateHints();});
+    $(id).addEventListener('input',updateHints);
+  });
+  $('selectedDate').addEventListener('change',()=>{ loadStoredActuals(); generateTimeline(); });
+});
 </script>
 </body></html>
