@@ -117,7 +117,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v47';
+const STORAGE_KEY='babyflow_local_v48';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const uiState = { collapsePast:false };
@@ -129,13 +129,14 @@ const ts=m=>{if(m==null||isNaN(m)) return '—'; m=((m%1440)+1440)%1440; let h=M
 const toInputTime=m=>{if(m==null||isNaN(m)) return ''; m=((m%1440)+1440)%1440; return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;};
 const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%60; if(!h) return `${mi} min${mi===1?'':'s'}`; if(!mi) return `${h} hr${h===1?'':'s'}`; return `${h} hr${h===1?'':'s'} ${mi} min${mi===1?'':'s'}`;};
 const nowMinutes=()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();};
+const localDateStr=()=>{const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;};
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;
 
 function getSelectedDateStr(){
-  return $('selectedDate')?.value || new Date().toISOString().slice(0,10);
+  return $('selectedDate')?.value || localDateStr();
 }
 function getDaysStore(){
   try{ return JSON.parse(localStorage.getItem(STORAGE_KEY+'_days') || '{}') || {}; }catch(e){ return {}; }
@@ -197,15 +198,14 @@ function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'
 function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='yes'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='200'; $('useLongNapException').value='yes'; $('includeBath').value='no'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; $('trackFeedDurations').value='no'; $('fullFeedLength').value='20'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll(); $('useDreamFeed').value='yes'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
-  const d = new Date();
-  $('selectedDate').value = d.toISOString().slice(0,10);
+  $('selectedDate').value = localDateStr();
   loadStoredActuals();
   generateTimeline();
 }
 function shiftDate(days){
   const current = $('selectedDate').value ? new Date($('selectedDate').value + 'T00:00:00') : new Date();
   current.setDate(current.getDate() + days);
-  $('selectedDate').value = current.toISOString().slice(0,10);
+  const y=current.getFullYear(); const m=String(current.getMonth()+1).padStart(2,'0'); const day=String(current.getDate()).padStart(2,'0'); $('selectedDate').value = `${y}-${m}-${day}`;
   loadStoredActuals();
   generateTimeline();
 }
@@ -576,7 +576,7 @@ function generateTimeline(){
 window.addEventListener('DOMContentLoaded',()=>{
   loadState();
   if(!$('selectedDate').value){
-    $('selectedDate').value = new Date().toISOString().slice(0,10);
+    $('selectedDate').value = localDateStr();
   }
   loadStoredActuals();
   updateHints();
