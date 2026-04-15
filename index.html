@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v53';
+const STORAGE_KEY='babyflow_local_v54';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const uiState = { collapsePast:false };
@@ -473,14 +473,16 @@ function generateTimeline(){
 
   const renderItems = [];
   events.forEach(ev=>{
+    if(!ev.groupKey) ev.groupKey = ev.key;
+    if(!ev.groupLabel) ev.groupLabel = ev.title;
     if(includeWindDown && ev.type==='nap'){
       const windDownStart = (ev.start ?? ev.time) - windDownLength;
-      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, type:'nap', title:'Wind-down', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested', durationText:pretty(windDownLength)}});
+      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', title:'Wind-down', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested', durationText:pretty(windDownLength)}});
     }
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed'){
       const digestStart = ev.end!=null ? ev.end : ev.time;
-      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, type:'feed', title:'Upright to digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
+      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Upright to digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
     }
   });
 
@@ -540,17 +542,16 @@ function generateTimeline(){
   }
 
   const grouped = [];
-  let lastSection = '';
+  let lastGroupKey = '';
   if(uiState.collapsePast && collapsedCount){
     grouped.push(`<div class="item routine-item"><div class="item-note">${collapsedCount} past event${collapsedCount===1?'':'s'} hidden</div></div>`);
   }
   for (const item of visibleItems){
-    let section = 'Nighttime Routine’s';
-    if (item.html.includes('feed-item')) section = 'Feeds';
-    else if (item.html.includes('nap-item')) section = 'Naps';
-    if (section !== lastSection){
-      grouped.push(`<div class="section-title">${section}</div>`);
-      lastSection = section;
+    const groupKey = item.ev?.groupKey || item.ev?.key || '';
+    const groupLabel = item.ev?.groupLabel || item.ev?.title || '';
+    if (groupKey !== lastGroupKey){
+      grouped.push(`<div class="section-title">${groupLabel}</div>`);
+      lastGroupKey = groupKey;
     }
     grouped.push(item.html);
   }
