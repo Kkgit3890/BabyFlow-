@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v61';
+const STORAGE_KEY='babyflow_v62';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -569,7 +569,18 @@ function generateTimeline(){
   const napEvents = new Set(['nap-1','nap-2','nap-3','nap-4','nap-5']);
   function getHeaderForItem(ev){
     const key = ev?.key || '';
-    const baseKey = key.startsWith('digest-') ? key.replace('digest-','') : (key.startsWith('winddown-') ? key.replace('winddown-','') : key);
+    let baseKey;
+    if(key.startsWith('digest-')) baseKey = key.replace('digest-','');
+    else if(key.startsWith('winddown-')){
+      // keep winddown tied to its nap's wake window (previous feed)
+      const napKey = key.replace('winddown-','');
+      if(napKey === 'nap-1') baseKey = 'feed-1';
+      else if(napKey === 'nap-2') baseKey = 'feed-2';
+      else if(napKey === 'nap-3') baseKey = 'feed-3';
+      else if(napKey === 'nap-4') baseKey = 'feed-4';
+      else if(napKey === 'nap-5') baseKey = 'feed-5';
+      else baseKey = napKey;
+    } else baseKey = key;
     if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
     if(baseKey === 'nap-1') return 'Nap';
     if(baseKey === 'feed-2') return 'Wake Window #2';
