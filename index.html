@@ -102,8 +102,8 @@ details.advanced[open]{background:#fff}
 <div id="feedDurationWrap" class="field"><label>Full feed length (min)</label><input id="fullFeedLength" type="number" value="20"><div class="hint" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Upright to digest</label><select id="includeDigest"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
-<div id="digestLengthWrap" class="field"><label>Upright to digest length (min)</label><input id="digestLength" type="number" value="10"><div class="hint" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest</label><select id="includeDigest"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
+<div id="digestLengthWrap" class="field"><label>Digest length (min)</label><input id="digestLength" type="number" value="10"><div class="hint" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
 <div class="field"><label>Wind-down before naps</label><select id="includeWindDown"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v62';
+const STORAGE_KEY='babyflow_v65';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -311,7 +311,7 @@ function renderTimeControl(ev){
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     }
   }
-  const itemClass = ev.type==='nap' ? 'nap-item' : (ev.type==='feed' ? 'feed-item' : 'routine-item');
+  const itemClass = ev.type==='nap' ? 'feed-item' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
   const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}`;
   return `<div class="item ${itemClass}${stateClasses}"><div class="item-top"><div><div><b>${ev.title}</b></div>${chip(hasActual?'actual':(ev.chipType||'suggested'))}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
 }
@@ -502,7 +502,7 @@ function generateTimeline(){
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed'){
       const digestStart = ev.end!=null ? ev.end : ev.time;
-      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Upright to digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
+      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
     }
   });
   dayActivities.forEach(a=>{
@@ -582,15 +582,15 @@ function generateTimeline(){
       else baseKey = napKey;
     } else baseKey = key;
     if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
-    if(baseKey === 'nap-1') return 'Nap';
+    if(baseKey === 'nap-1') return 'Nap #1';
     if(baseKey === 'feed-2') return 'Wake Window #2';
-    if(baseKey === 'nap-2') return 'Nap';
+    if(baseKey === 'nap-2') return 'Nap #2';
     if(baseKey === 'feed-3') return 'Wake Window #3';
-    if(baseKey === 'nap-3') return 'Nap';
+    if(baseKey === 'nap-3') return 'Nap #3';
     if(baseKey === 'feed-4') return 'Wake Window #4';
-    if(baseKey === 'nap-4') return 'Nap';
+    if(baseKey === 'nap-4') return 'Nap #4';
     if(baseKey === 'feed-5') return 'Wake Window #5';
-    if(baseKey === 'nap-5') return 'Nap';
+    if(baseKey === 'nap-5') return 'Nap #5';
     if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Nighttime Routines';
     if(String(baseKey).startsWith('activity-')) return 'Activity';
     return ev?.groupLabel || ev?.title || '';
@@ -622,7 +622,7 @@ function generateTimeline(){
       const feedEnd = ev.end!=null ? ev.end : ev.time;
       flattenedEvents.push({title:ev.title, start:ev.time, end:feedEnd, type:ev.type});
       if(includeDigest){
-        flattenedEvents.push({title:'Upright to digest', start:feedEnd, end:feedEnd + digestLength, type:'feed'});
+        flattenedEvents.push({title:'Digest', start:feedEnd, end:feedEnd + digestLength, type:'feed'});
       }
     } else {
       flattenedEvents.push({title:ev.title, start:ev.time, end:ev.end!=null ? ev.end : ev.time, type:ev.type});
