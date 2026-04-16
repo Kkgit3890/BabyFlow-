@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v58';
+const STORAGE_KEY='babyflow_local_v60';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -228,7 +228,7 @@ function shiftDate(days){
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 function saveEventActual(key,type){
   const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
-  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null) && (ev.type==='nap' || String(key).startsWith('winddown-') || String(key).startsWith('digest-')));
+  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
   if(isRangeEvent){
     const s=tm($(`edit-${key}-start`).value), e=tm($(`edit-${key}-end`).value);
     if(s==null||e==null) return;
@@ -245,13 +245,9 @@ function clearEventActual(key){ delete actuals[key]; saveActuals(); generateTime
 function setEventNow(key, type){
   const t = nowMinutes();
   const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
-  const trackFeedDurations = $('trackFeedDurations').value==='yes';
-  const fullFeedMinutes = parseInt(($('fullFeedLength')?.value)||String(DEFAULT_FULL_FEED_MINUTES),10);
-  if(type==='nap'){
-    const duration = ev && ev.end!=null && ev.start!=null ? Math.max(0, ev.end - ev.start) : 0;
-    actuals[key] = {type, start:t, end:t + duration};
-  } else if(type==='feed' && trackFeedDurations){
-    const duration = ev && ev.feedDuration!=null ? ev.feedDuration : fullFeedMinutes;
+  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  if(isRangeEvent){
+    const duration = ev && ev.end!=null && (ev.start!=null || ev.time!=null) ? Math.max(0, ev.end - (ev.start!=null ? ev.start : ev.time)) : 0;
     actuals[key] = {type, start:t, end:t + duration, time:t};
   } else {
     actuals[key] = {type, time:t};
@@ -298,7 +294,7 @@ function renderTimeControl(ev){
   const isActivity = ev.key && String(ev.key).startsWith('activity-');
   const hasActual=!!actuals[ev.key];
   const actual = actuals[ev.key];
-  const isRangeEvent = !!((ev.end!=null || ev.start!=null) && (ev.type==='nap' || String(ev.key).startsWith('winddown-') || String(ev.key).startsWith('digest-')));
+  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
   const shown = hasActual
     ? (isRangeEvent ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(actual.time))
     : ev.displayTime;
@@ -330,6 +326,9 @@ function generateTimeline(){
   const includeWindDown = $('includeWindDown').value==='yes';
   const windDownLength = parseInt(($('windDownLength')?.value)||'5',10);
   const fullFeedMinutes = parseInt(($('fullFeedLength')?.value)||String(DEFAULT_FULL_FEED_MINUTES),10);
+  const feedBlockMinutes = fullFeedMinutes + (includeDigest ? digestLength : 0);
+  const napPrepMinutes = includeWindDown ? windDownLength : 0;
+  const feedToNapClearance = feedBlockMinutes + napPrepMinutes;
   const dream=tm($('dreamFeedTime').value), wake=tm($('wakeTime').value), firstWW=rng($('firstWWRange').value), laterWW=rng($('laterWWRange').value), firstNapR=rng($('firstNapRange').value), regNapR=rng($('regularNapRange').value), longNapR=rng($('longNapRange').value), feedR=rng($('feedRange').value), longNapFeedR=rng($('longNapFeedRange').value);
   if(([wake,firstWW,laterWW,firstNapR,regNapR,longNapR,feedR].some(v=>v==null)) || (useDreamFeed && dream==null)){ $('timeline').innerHTML='Please enter your wake time and make sure all template fields are filled in correctly.'; return; }
 
@@ -378,7 +377,7 @@ function generateTimeline(){
   }
 
   const nap1Actual = actuals['nap-1'];
-  let nap1Start = nap1Actual ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+fullFeedMinutes);
+  let nap1Start = nap1Actual ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance);
   let nap1End = nap1Actual ? nap1Actual.end : nap1Start + firstNapC;
   events.push({key:'nap-1', type:'nap', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
@@ -394,7 +393,7 @@ function generateTimeline(){
 
   function pushNap(key,title,prevNapEnd,ww,duration){
     const actual = actuals[key];
-    let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+fullFeedMinutes);
+    let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance);
     let e = actual ? actual.end : s + duration;
     const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
     events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `${pretty(s-prevNap.end)} since ${prevNap.title}` : '', chipType:'suggested', durationText:pretty(e-s)});
@@ -408,7 +407,7 @@ function generateTimeline(){
   let feed3Time = pushFeed('feed-3','Feed 3',feedR.min,nap2.end);
 
   const nap3Actual = actuals['nap-3'];
-  let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+fullFeedMinutes);
+  let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance);
   let nap3End = nap3Actual ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
   const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
   events.push({key:'nap-3', type:'nap', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `${pretty(nap3Start-prevNapForNap3.end)} since ${prevNapForNap3.title}` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
@@ -419,7 +418,7 @@ function generateTimeline(){
     const feed3Event = events.find(ev => ev.key === 'feed-3');
     const feed2Event = events.find(ev => ev.key === 'feed-2');
     const latestAllowedFeed3 = nap3End - activeLongRange.max;
-    const latestPossibleFeed3 = nap3Start - fullFeedMinutes;
+    const latestPossibleFeed3 = nap3Start - feedToNapClearance;
     let adjustedFeed3 = Math.max(feed2Event ? feed2Event.time + feedR.min : 0, latestAllowedFeed3);
     adjustedFeed3 = Math.min(adjustedFeed3, latestPossibleFeed3);
 
@@ -461,7 +460,7 @@ function generateTimeline(){
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
     const nap5Actual = actuals['nap-5'];
-    let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+fullFeedMinutes);
+    let nap5Start = nap5Actual ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
     let nap5End = nap5Actual ? nap5Actual.end : nap5Start + 45;
     const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
