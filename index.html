@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v54';
+const STORAGE_KEY='babyflow_local_v56';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 const uiState = { collapsePast:false };
@@ -494,7 +494,7 @@ function generateTimeline(){
   if(bathSelected){
     const bathActual = actuals['bath'];
     const bathStart = bathActual ? bathActual.time : tailStart;
-    renderItems.push({t:bathStart, html:'', ev:{key:'bath', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)}});
+    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)}});
     tailStart = bathStart + bathLen;
   }
 
