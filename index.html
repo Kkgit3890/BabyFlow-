@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v57';
+const STORAGE_KEY='babyflow_local_v58';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -227,15 +227,19 @@ function shiftDate(days){
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 function saveEventActual(key,type){
-  const trackFeedDurations = $('trackFeedDurations').value==='yes';
-  if(type==='nap'){
-    const s=tm($(`edit-${key}-start`).value), e=tm($(`edit-${key}-end`).value); if(s==null||e==null) return; actuals[key]={type,start:s,end:e};
-  } else if(type==='feed' && trackFeedDurations){
-    const s=tm($(`edit-${key}-start`).value), e=tm($(`edit-${key}-end`).value); if(s==null||e==null) return; actuals[key]={type,start:s,end:e,time:s};
+  const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
+  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null) && (ev.type==='nap' || String(key).startsWith('winddown-') || String(key).startsWith('digest-')));
+  if(isRangeEvent){
+    const s=tm($(`edit-${key}-start`).value), e=tm($(`edit-${key}-end`).value);
+    if(s==null||e==null) return;
+    actuals[key]={type,start:s,end:e,time:s};
   } else {
-    const t=tm($(`edit-${key}-time`).value); if(t==null) return; actuals[key]={type,time:t};
+    const t=tm($(`edit-${key}-time`).value);
+    if(t==null) return;
+    actuals[key]={type,time:t};
   }
-  saveActuals(); generateTimeline();
+  saveActuals();
+  generateTimeline();
 }
 function clearEventActual(key){ delete actuals[key]; saveActuals(); generateTimeline(); }
 function setEventNow(key, type){
@@ -293,16 +297,21 @@ function removeActivity(id){
 function renderTimeControl(ev){
   const isActivity = ev.key && String(ev.key).startsWith('activity-');
   const hasActual=!!actuals[ev.key];
-  const shown = hasActual ? (ev.type==='nap' ? `${ts(actuals[ev.key].start)} – ${ts(actuals[ev.key].end)}` : ts(actuals[ev.key].time)) : ev.displayTime;
+  const actual = actuals[ev.key];
+  const isRangeEvent = !!((ev.end!=null || ev.start!=null) && (ev.type==='nap' || String(ev.key).startsWith('winddown-') || String(ev.key).startsWith('digest-')));
+  const shown = hasActual
+    ? (isRangeEvent ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(actual.time))
+    : ev.displayTime;
   let panel='';
   if(isActivity){
-    panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div class="row"><button class="secondary small-btn" onclick="removeActivity('${ev.key}')">Remove activity</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
+    panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(ev.time)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','routine')">Save actual</button><button class="secondary small-btn" onclick="removeActivity('${ev.key}')">Remove activity</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
   } else if(editableTypes.has(ev.type)){
-    if(ev.type==='nap'){
-      const s=hasActual?actuals[ev.key].start:ev.start, e=hasActual?actuals[ev.key].end:ev.end;
-      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div class="inline-grid"><div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div><div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','nap')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','nap')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
+    if(isRangeEvent){
+      const s=hasActual && actual.start!=null ? actual.start : (ev.start!=null ? ev.start : ev.time);
+      const e=hasActual && actual.end!=null ? actual.end : (ev.end!=null ? ev.end : ev.time);
+      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div class="inline-grid"><div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div><div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     } else {
-      const t=hasActual?actuals[ev.key].time:ev.time;
+      const t=hasActual && actual.time!=null ? actual.time : ev.time;
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
     }
   }
