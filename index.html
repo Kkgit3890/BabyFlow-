@@ -125,7 +125,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_local_v60';
+const STORAGE_KEY='babyflow_local_v61';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -565,16 +565,34 @@ function generateTimeline(){
   }
 
   const grouped = [];
-  let lastGroupKey = '';
+  const wakeEvents = new Set(['good-morning','feed-1','feed-2','feed-3','feed-4','feed-5','night-cap']);
+  const napEvents = new Set(['nap-1','nap-2','nap-3','nap-4','nap-5']);
+  function getHeaderForItem(ev){
+    const key = ev?.key || '';
+    const baseKey = key.startsWith('digest-') ? key.replace('digest-','') : (key.startsWith('winddown-') ? key.replace('winddown-','') : key);
+    if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
+    if(baseKey === 'nap-1') return 'Nap';
+    if(baseKey === 'feed-2') return 'Wake Window #2';
+    if(baseKey === 'nap-2') return 'Nap';
+    if(baseKey === 'feed-3') return 'Wake Window #3';
+    if(baseKey === 'nap-3') return 'Nap';
+    if(baseKey === 'feed-4') return 'Wake Window #4';
+    if(baseKey === 'nap-4') return 'Nap';
+    if(baseKey === 'feed-5') return 'Wake Window #5';
+    if(baseKey === 'nap-5') return 'Nap';
+    if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Nighttime Routines';
+    if(String(baseKey).startsWith('activity-')) return 'Activity';
+    return ev?.groupLabel || ev?.title || '';
+  }
+  let lastHeader = '';
   if(uiState.collapsePast && collapsedCount){
     grouped.push(`<div class="item routine-item"><div class="item-note">${collapsedCount} past event${collapsedCount===1?'':'s'} hidden</div></div>`);
   }
   for (const item of visibleItems){
-    const groupKey = item.ev?.groupKey || item.ev?.key || '';
-    const groupLabel = item.ev?.groupLabel || item.ev?.title || '';
-    if (groupKey !== lastGroupKey){
-      grouped.push(`<div class="section-title">${groupLabel}</div>`);
-      lastGroupKey = groupKey;
+    const header = getHeaderForItem(item.ev);
+    if (header !== lastHeader){
+      grouped.push(`<div class="section-title">${header}</div>`);
+      lastHeader = header;
     }
     grouped.push(item.html);
   }
