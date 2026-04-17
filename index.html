@@ -54,6 +54,30 @@ details.advanced[open]{background:#fff}
   border-left: 4px solid #ffb347 !important;
 }
 
+
+/* subtle status indicator */
+.time-btn{position:relative}
+.time-btn.actual::after{
+  content:"";
+  width:8px;height:8px;
+  border-radius:50%;
+  background:#22c55e;
+  position:absolute;
+  right:-14px;
+  top:50%;
+  transform:translateY(-50%);
+}
+.time-btn.suggested::after{
+  content:"";
+  width:8px;height:8px;
+  border-radius:50%;
+  background:#cbd5f5;
+  position:absolute;
+  right:-14px;
+  top:50%;
+  transform:translateY(-50%);
+}
+
 </style>
 </head>
 <body><div class="wrap">
@@ -138,7 +162,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v68';
+const STORAGE_KEY='babyflow_v69';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -310,24 +334,56 @@ function renderTimeControl(ev){
   const shown = hasActual
     ? (isRangeEvent ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(actual.time))
     : ev.displayTime;
+
   let panel='';
   if(editableTypes.has(ev.type)){
     if(isRangeEvent){
       const s=hasActual && actual.start!=null ? actual.start : (ev.start!=null ? ev.start : ev.time);
       const e=hasActual && actual.end!=null ? actual.end : (ev.end!=null ? ev.end : ev.time);
-      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div class="inline-grid"><div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div><div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
+      panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
+        <div class="inline-grid">
+          <div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div>
+          <div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div>
+        </div>
+        <div class="row">
+          <button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
+          <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
+          <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
+          <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
+        </div>
+      </div>`;
     } else {
       const t=hasActual && actual.time!=null ? actual.time : ev.time;
-      panel = `<div class="edit-panel hidden" id="panel-${ev.key}"><div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div><div class="row"><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button><button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button><button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button><button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button><button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button></div></div>`;
+      panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
+        <div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div>
+        <div class="row">
+          <button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
+          <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
+          <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
+          <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
+        </div>
+      </div>`;
     }
   }
+
   const baseClass = ev.type==='nap' ? 'feed-item' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
   const itemClass = ev.customClass ? ev.customClass : baseClass;
   const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}`;
-  const status = hasActual
-    ? `<div class="status-label status-actual">Actual</div>`
-    : `<div class="status-label status-suggested">Suggested</div>`;
-  return `<div class="item ${itemClass}${stateClasses}"><div class="item-top"><div><div><b>${ev.title}</b></div>${status}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
+  const timeClass = hasActual ? 'actual' : 'suggested';
+
+  return `<div class="item ${itemClass}${stateClasses}">
+    <div class="item-top">
+      <div><b>${ev.title}</b></div>
+      <div class="item-right">
+        <button class="time-btn ${timeClass}" onclick="togglePanel('${ev.key}')">${shown}</button>
+        ${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}
+      </div>
+    </div>
+    ${ev.note?`<div class="item-note">${ev.note}</div>`:''}
+    ${panel}
+  </div>`;
 }
 
 
