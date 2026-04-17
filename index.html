@@ -138,7 +138,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v67';
+const STORAGE_KEY='babyflow_v68';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -323,8 +323,11 @@ function renderTimeControl(ev){
   }
   const baseClass = ev.type==='nap' ? 'feed-item' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
   const itemClass = ev.customClass ? ev.customClass : baseClass;
-  const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}${hasActual ? ' actual-item' : ' suggested-item'}`;
-  return `<div class="item ${itemClass}${stateClasses}"><div class="item-top"><div><div><b>${ev.title}</b></div></div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
+  const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}`;
+  const status = hasActual
+    ? `<div class="status-label status-actual">Actual</div>`
+    : `<div class="status-label status-suggested">Suggested</div>`;
+  return `<div class="item ${itemClass}${stateClasses}"><div class="item-top"><div><div><b>${ev.title}</b></div>${status}</div><div class="item-right"><button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}</div></div>${ev.note?`<div class="item-note">${ev.note}</div>`:''}${panel}</div>`;
 }
 
 
