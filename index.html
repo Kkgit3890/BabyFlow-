@@ -88,6 +88,21 @@ details.advanced[open]{background:#fff}
 }
 .status-dot.actual{background:#22c55e;border-color:#16a34a}
 
+
+/* force border-only cards */
+.item.winddown-item,
+.item.night-item{
+  background:#ffffff !important;
+  background-color:#ffffff !important;
+  box-shadow:none;
+}
+.item.winddown-item *:not(.time-btn):not(.status-dot),
+.item.night-item *:not(.time-btn):not(.status-dot){
+  background:transparent !important;
+}
+.item.winddown-item{border-left:4px solid #86efac !important}
+.item.night-item{border-left:4px solid #f59e0b !important}
+
 </style>
 </head>
 <body><div class="wrap">
@@ -128,7 +143,7 @@ details.advanced[open]{background:#fff}
 <div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div id="longNapExceptionWrap" class="field"><label>Long nap feed interval exception</label><input id="longNapFeedRange" value="200"><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
-<div class="field"><label>Bath</label><select id="includeBath"><option value="yes">Include</option><option value="no" selected>Skip</option></select></div>
+<div class="field"><label>Bath</label><select id="includeBath"><option value="yes" selected>Include</option><option value="no" selected>Skip</option></select></div>
 </div>
 
 <div class="grid">
@@ -145,15 +160,15 @@ details.advanced[open]{background:#fff}
 </div>
 
 <div class="grid">
-<div class="field"><label>Track feed durations</label><select id="trackFeedDurations"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
+<div class="field"><label>Track feed durations</label><select id="trackFeedDurations"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
 <div id="feedDurationWrap" class="field"><label>Full feed length (min)</label><input id="fullFeedLength" type="number" value="20"><div class="hint" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest</label><select id="includeDigest"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
+<div class="field"><label>Digest</label><select id="includeDigest"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
 <div id="digestLengthWrap" class="field"><label>Digest length (min)</label><input id="digestLength" type="number" value="10"><div class="hint" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down before naps</label><select id="includeWindDown"><option value="no" selected>Skip</option><option value="yes">Include</option></select></div>
+<div class="field"><label>Wind-down before naps</label><select id="includeWindDown"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
 <div id="windDownLengthWrap" class="field"><label>Wind-down length (min)</label><input id="windDownLength" type="number" value="5"><div class="hint" id="windDownLengthHint"></div></div>
 </div>
 </details>
@@ -172,7 +187,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v70';
+const STORAGE_KEY='babyflow_v72';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -354,7 +369,17 @@ function quickToggleActual(key){
     generateTimeline();
     return;
   }
-  setEventNow(key, ev.type);
+  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  if(isRangeEvent){
+    const s = ev.start!=null ? ev.start : ev.time;
+    const e = ev.end!=null ? ev.end : ev.time;
+    actuals[key] = {type:ev.type, start:s, end:e, time:s};
+  } else {
+    const t = ev.time;
+    actuals[key] = {type:ev.type, time:t};
+  }
+  saveActuals();
+  generateTimeline();
 }
 
 
