@@ -78,6 +78,16 @@ details.advanced[open]{background:#fff}
   transform:translateY(-50%);
 }
 
+
+.time-btn-wrap{position:relative;display:inline-block}
+.status-dot{
+  width:10px;height:10px;border-radius:50%;
+  border:1px solid #94a3b8;background:#fff;display:inline-block;
+  position:absolute;right:-16px;top:50%;transform:translateY(-50%);
+  cursor:pointer;
+}
+.status-dot.actual{background:#22c55e;border-color:#16a34a}
+
 </style>
 </head>
 <body><div class="wrap">
@@ -162,7 +172,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v69';
+const STORAGE_KEY='babyflow_v70';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -326,6 +336,27 @@ function removeActivity(id){
   saveActuals();
   generateTimeline();
 }
+function deleteTimelineEvent(key){
+  if(String(key).startsWith('activity-')){
+    removeActivity(key);
+    return;
+  }
+  delete actuals[key];
+  saveActuals();
+  generateTimeline();
+}
+function quickToggleActual(key){
+  const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
+  if(!ev) return;
+  if(actuals[key]){
+    delete actuals[key];
+    saveActuals();
+    generateTimeline();
+    return;
+  }
+  setEventNow(key, ev.type);
+}
+
 
 function renderTimeControl(ev){
   const hasActual=!!actuals[ev.key];
@@ -336,7 +367,7 @@ function renderTimeControl(ev){
     : ev.displayTime;
 
   let panel='';
-  if(editableTypes.has(ev.type)){
+  if(editableTypes.has(ev.type) || (ev.key && String(ev.key).startsWith('activity-'))){
     if(isRangeEvent){
       const s=hasActual && actual.start!=null ? actual.start : (ev.start!=null ? ev.start : ev.time);
       const e=hasActual && actual.end!=null ? actual.end : (ev.end!=null ? ev.end : ev.time);
@@ -350,6 +381,7 @@ function renderTimeControl(ev){
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
           <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
           <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
         </div>
       </div>`;
@@ -362,6 +394,7 @@ function renderTimeControl(ev){
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
           <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
           <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
         </div>
       </div>`;
@@ -371,13 +404,16 @@ function renderTimeControl(ev){
   const baseClass = ev.type==='nap' ? 'feed-item' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
   const itemClass = ev.customClass ? ev.customClass : baseClass;
   const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}`;
-  const timeClass = hasActual ? 'actual' : 'suggested';
+  const dotClass = hasActual ? 'actual' : 'suggested';
 
   return `<div class="item ${itemClass}${stateClasses}">
     <div class="item-top">
       <div><b>${ev.title}</b></div>
       <div class="item-right">
-        <button class="time-btn ${timeClass}" onclick="togglePanel('${ev.key}')">${shown}</button>
+        <span class="time-btn-wrap">
+          <button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>
+          <span class="status-dot ${dotClass}" onclick="quickToggleActual('${ev.key}')" title="${hasActual ? 'Marked actual — tap to clear' : 'Tap to mark actual'}"></span>
+        </span>
         ${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}
       </div>
     </div>
@@ -661,7 +697,7 @@ function generateTimeline(){
     if(baseKey === 'nap-4') return 'Nap #4';
     if(baseKey === 'feed-5') return 'Wake Window #5';
     if(baseKey === 'nap-5') return 'Nap #5';
-    if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Nighttime Routines';
+    if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Final Wake Window';
     if(String(baseKey).startsWith('activity-')) return 'Activity';
     return ev?.groupLabel || ev?.title || '';
   }
