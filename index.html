@@ -91,17 +91,13 @@ details.advanced[open]{background:#fff}
 
 /* force border-only cards */
 .item.winddown-item,
-.item.night-item{
-  background:#ffffff !important;
-  background-color:#ffffff !important;
-  box-shadow:none;
-}
+.item.night-item{border-left:4px solid #f59e0b !important;background:#fff !important}
 .item.winddown-item *:not(.time-btn):not(.status-dot),
 .item.night-item *:not(.time-btn):not(.status-dot){
   background:transparent !important;
 }
-.item.winddown-item{border-left:4px solid #86efac !important}
-.item.night-item{border-left:4px solid #f59e0b !important}
+.item.winddown-item{border-left:4px solid #f59e0b !important;background:#fff !important}
+.item.night-item{border-left:4px solid #f59e0b !important;background:#fff !important}
 
 </style>
 </head>
@@ -644,7 +640,7 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, type:'routine', title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
+    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:'night-item', type:'routine', title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
 
   const bathSelected = $('includeBath').value==='yes';
