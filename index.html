@@ -708,8 +708,9 @@ function generateTimeline(){
   function getHeaderForItem(ev){
     const key = ev?.key || '';
     let baseKey;
-    if(key.startsWith('digest-')) baseKey = key.replace('digest-','');
-    else if(key.startsWith('winddown-')){
+    if(key.startsWith('digest-')) {
+      baseKey = key.replace('digest-','');
+    } else if(key.startsWith('winddown-')) {
       const napKey = key.replace('winddown-','');
       if(napKey === 'nap-1') baseKey = 'feed-1';
       else if(napKey === 'nap-2') baseKey = 'feed-2';
@@ -717,7 +718,7 @@ function generateTimeline(){
       else if(napKey === 'nap-4') baseKey = 'feed-4';
       else if(napKey === 'nap-5') baseKey = 'feed-5';
       else baseKey = napKey;
-    } else if(String(key).startsWith('activity-')){
+    } else if(String(key).startsWith('activity-')) {
       const t = ev?.time ?? ev?.start ?? 0;
       if(t < (events.find(x=>x.key==='nap-1')?.start ?? Infinity)) return 'Wake Window #1';
       if(t < (events.find(x=>x.key==='nap-2')?.start ?? Infinity)) return 'Wake Window #2';
@@ -725,7 +726,9 @@ function generateTimeline(){
       if(t < (events.find(x=>x.key==='nap-4')?.start ?? Infinity)) return 'Wake Window #4';
       if(t < (events.find(x=>x.key==='nap-5')?.start ?? Infinity)) return 'Wake Window #5';
       return 'Final Wake Window';
-    } else baseKey = key;
+    } else {
+      baseKey = key;
+    }
 
     if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
     if(baseKey === 'nap-1') return 'Nap #1';
@@ -738,20 +741,6 @@ function generateTimeline(){
     if(baseKey === 'feed-5') return 'Wake Window #5';
     if(baseKey === 'nap-5') return 'Nap #5';
     if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Final Wake Window';
-    return ev?.groupLabel || ev?.title || '';
-  } else baseKey = key;
-    if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
-    if(baseKey === 'nap-1') return 'Nap #1';
-    if(baseKey === 'feed-2') return 'Wake Window #2';
-    if(baseKey === 'nap-2') return 'Nap #2';
-    if(baseKey === 'feed-3') return 'Wake Window #3';
-    if(baseKey === 'nap-3') return 'Nap #3';
-    if(baseKey === 'feed-4') return 'Wake Window #4';
-    if(baseKey === 'nap-4') return 'Nap #4';
-    if(baseKey === 'feed-5') return 'Wake Window #5';
-    if(baseKey === 'nap-5') return 'Nap #5';
-    if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Final Wake Window';
-    if(String(baseKey).startsWith('activity-')) return 'Activity';
     return ev?.groupLabel || ev?.title || '';
   }
   let lastHeader = '';
