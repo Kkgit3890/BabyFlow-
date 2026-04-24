@@ -103,6 +103,10 @@ details.advanced[open]{background:#fff}
 .item.winddown-item{border-left:4px solid #f59e0b !important;background:#fff !important}
 .item.night-item{border-left:4px solid #f59e0b !important}
 
+
+.winddown-purple{border-left:4px solid #a78bfa !important;background:#fff !important}
+.goodmorning-amber{border-left:4px solid #f59e0b !important;background:#fff !important}
+
 </style>
 </head>
 <body><div class="wrap">
@@ -187,7 +191,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v81';
+const STORAGE_KEY='babyflow_v82';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -475,7 +479,7 @@ function generateTimeline(){
   if(useDreamFeed){
     events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
   }
-  events.push({key:'good-morning', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
+  events.push({key:'good-morning', customClass:'goodmorning-amber', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
   let lastFeed = useDreamFeed ? dream : null;
   let lastFullFeedStart = useDreamFeed ? dream : null;
@@ -635,12 +639,12 @@ function generateTimeline(){
     if(!ev.groupLabel) ev.groupLabel = ev.title;
     if(includeWindDown && ev.type==='nap' && !deletedEventKeys.includes(`winddown-${ev.key}`)){
       const windDownStart = (ev.start ?? ev.time) - windDownLength;
-      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', title:'Wind-down', customClass:'winddown-item', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested', durationText:pretty(windDownLength)}});
+      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', title:'Wind-down', customClass:'winddown-purple', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
     }
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
       const digestStart = ev.end!=null ? ev.end : ev.time;
-      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested', durationText:pretty(digestLength)}});
+      renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested'}});
     }
   });
   dayActivities.forEach(a=>{
@@ -655,25 +659,25 @@ function generateTimeline(){
   if(bathSelected && !deletedEventKeys.includes('bath')){
     const bathActual = actuals['bath'];
     const bathStart = bathActual ? bathActual.time : tailStart;
-    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)}});
+    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine'}});
     tailStart = bathStart + bathLen;
   }
 
   const routineActual = actuals['bedtime-routine'];
   const routineStart = routineActual ? routineActual.time : tailStart;
-  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine', durationText:pretty(routineLen)}});
+  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine'}});
   tailStart = routineStart + routineLen;
 
   if($('includeBedtimeTopOff').value==='yes' && !deletedEventKeys.includes('bedtime-topoff')){
     const topActual = actuals['bedtime-topoff'];
     const topStart = topActual ? topActual.time : tailStart;
-    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine', durationText:pretty(TOP_OFF_MINUTES)}});
+    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine'}});
     tailStart = topStart + TOP_OFF_MINUTES;
   }
 
   const goodnightActual = actuals['goodnight'];
   const goodnightTime = goodnightActual ? goodnightActual.time : tailStart;
-  if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:'', chipType:'routine'}});
+  if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:(()=>{const lastNap=events.filter(ev=>ev.type==='nap').slice(-1)[0]; return lastNap ? `${pretty(goodnightTime-lastNap.end)} since ${lastNap.title}` : ''})(), chipType:'routine'}});
   tailStart = goodnightTime;
 
   const current = nowMinutes();
@@ -777,7 +781,7 @@ function generateTimeline(){
     if(deletedEventKeys.includes(ev.key)) return;
     if(ev.type==='nap'){
       if(includeWindDown){
-        flattenedEvents.push({title:'Wind-down', customClass:'winddown-item', start:ev.start - windDownLength, end:ev.start, type:'nap'});
+        flattenedEvents.push({title:'Wind-down', customClass:'winddown-purple', start:ev.start - windDownLength, end:ev.start, type:'nap'});
       }
       flattenedEvents.push({title:ev.title, start:ev.start, end:ev.end, type:'nap'});
     } else if(ev.type==='feed'){
