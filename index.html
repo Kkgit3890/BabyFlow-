@@ -187,7 +187,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v80';
+const STORAGE_KEY='babyflow_v81';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -655,19 +655,19 @@ function generateTimeline(){
   if(bathSelected && !deletedEventKeys.includes('bath')){
     const bathActual = actuals['bath'];
     const bathStart = bathActual ? bathActual.time : tailStart;
-    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', customClass:'night-item', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)}});
+    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine', durationText:pretty(bathLen)}});
     tailStart = bathStart + bathLen;
   }
 
   const routineActual = actuals['bedtime-routine'];
   const routineStart = routineActual ? routineActual.time : tailStart;
-  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', customClass:'night-item', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine', durationText:pretty(routineLen)}});
+  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine', durationText:pretty(routineLen)}});
   tailStart = routineStart + routineLen;
 
   if($('includeBedtimeTopOff').value==='yes' && !deletedEventKeys.includes('bedtime-topoff')){
     const topActual = actuals['bedtime-topoff'];
     const topStart = topActual ? topActual.time : tailStart;
-    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', customClass:'night-item', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine', durationText:pretty(TOP_OFF_MINUTES)}});
+    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine', durationText:pretty(TOP_OFF_MINUTES)}});
     tailStart = topStart + TOP_OFF_MINUTES;
   }
 
