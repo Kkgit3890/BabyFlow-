@@ -25,7 +25,7 @@ button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:
 @media (max-width:820px){.summary{grid-template-columns:1fr}}
 .timeline{display:flex;flex-direction:column;gap:10px}.item{border:1px solid var(--border);border-left:6px solid var(--border);border-radius:16px;padding:12px 14px;background:#fff}
 .item.feed-item{border-left-color:#93c5fd}
-.item.nap-item{border-left-color:#86efac}
+.item.nap-item{border-left:4px solid #a78bfa !important;background:#fff !important}
 .item.routine-item{border-left-color:#d8b4fe}
 .item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.item-right{display:flex;flex-direction:column;align-items:flex-end;min-width:140px}.item-duration-right,.item-note,.hint{color:var(--muted);font-size:13px}
 .chip{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;margin-top:7px}.actual{background:var(--green);color:#166534}.suggested{background:var(--blue);color:#1d4ed8}.routine{background:var(--purple);color:#6d28d9}.projected{background:var(--yellow);color:#854d0e}
@@ -107,6 +107,9 @@ details.advanced[open]{background:#fff}
 .winddown-purple{border-left:4px solid #a78bfa !important;background:#fff !important}
 .goodmorning-amber{border-left:4px solid #f59e0b !important;background:#fff !important}
 
+
+.activity-blue{border-left:4px solid #3b82f6 !important;background:#fff !important}
+
 </style>
 </head>
 <body><div class="wrap">
@@ -187,11 +190,13 @@ details.advanced[open]{background:#fff}
 <div class="summary-card"><div class="hint">Goodnight</div><div id="goodnightCard"></div></div>
 </div></div>
 
-<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType"><option value="Tummy time">Tummy time</option><option value="Story time">Story time</option><option value="Walk">Walk</option><option value="Swing">Swing</option><option value="Playtime">Playtime</option></select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
+<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType"><option value="Tummy time">Tummy time</option><option value="Story time">Story time</option><option value="Walk">Walk</option><option value="Swing">Swing</option><option value="Playtime">Playtime</option>
+<option value="Sunshine">Sunshine</option>
+<option value="Stretches">Stretches</option></select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v82';
+const STORAGE_KEY='babyflow_v83';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -648,7 +653,7 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:'night-item', type:'routine', title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
+    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:'activity-blue', type:'routine', title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
 
   const bathSelected = $('includeBath').value==='yes';
