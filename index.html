@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v85';
+const STORAGE_KEY='babyflow_v86';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -442,7 +442,7 @@ function renderTimeControl(ev){
     }
   }
 
-  const baseClass = ev.type==='nap' ? 'feed-item' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
+  const baseClass = ev.type==='nap' ? 'nap-purple' : (ev.type==='feed' ? 'nap-item' : 'routine-item');
   const itemClass = ev.customClass ? ev.customClass : baseClass;
   const stateClasses = `${ev.isCurrent ? ' current-item' : ''}${ev.isPast ? ' past-item' : ''}`;
   const dotClass = hasActual ? 'actual' : 'suggested';
@@ -543,7 +543,7 @@ function generateTimeline(){
     let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance);
     let e = actual ? actual.end : s + duration;
     const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
-    events.push({key, type:'nap', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `${pretty(s-prevNap.end)} since ${prevNap.title}` : '', chipType:'suggested', durationText:pretty(e-s)});
+    events.push({key, type:'nap', customClass:'nap-purple', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `${pretty(s-prevNap.end)} since ${prevNap.title}` : '', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
   }
 
@@ -645,7 +645,7 @@ function generateTimeline(){
     if(!ev.groupLabel) ev.groupLabel = ev.title;
     if(includeWindDown && ev.type==='nap' && !deletedEventKeys.includes(`winddown-${ev.key}`)){
       const windDownStart = (ev.start ?? ev.time) - windDownLength;
-      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', title:'Wind-down', customClass:'winddown-purple', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
+      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', customClass:'nap-purple', title:'Wind-down', customClass:'winddown-purple', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
     }
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
