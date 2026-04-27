@@ -104,12 +104,12 @@ details.advanced[open]{background:#fff}
 .item.night-item{border-left:4px solid #f59e0b !important}
 
 
-.winddown-purple{border-left:4px solid #a78bfa !important;background:#fff !important}
+.winddown-purple{border-left:4px solid #d8b4fe !important;background:#fff !important}
 .goodmorning-amber{border-left:4px solid #f59e0b !important;background:#fff !important}
 
 
 .activity-blue{border-left:4px solid #93c5fd !important;background:#fff !important}
-.nap-purple{border-left:4px solid #a78bfa !important;background:#fff !important}
+.nap-purple{border-left:4px solid #d8b4fe !important;background:#fff !important}
 
 </style>
 </head>
@@ -143,14 +143,14 @@ details.advanced[open]{background:#fff}
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+<div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no" selected>No</option></select></div>
 <div id="dreamFeedWrap" class="field"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
 </div>
 
 <div class="quad">
 <div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div id="longNapExceptionWrap" class="field"><label>Long nap feed interval exception</label><input id="longNapFeedRange" value="210"><div class="hint" id="longNapFeedRangeHint"></div></div>
-<div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
+<div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
 <div class="field"><label>Bath</label><select id="includeBath"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
 </div>
 
@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v86';
+const STORAGE_KEY='babyflow_v87';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
