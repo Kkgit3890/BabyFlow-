@@ -45,13 +45,13 @@ details.advanced[open]{background:#fff}
 /* Wind-down lighter green */
 .winddown-item {
   background: #e8f8ee !important;
-  border-left: 4px solid #7fd6a3 !important;
+  border-left:6px solid #7fd6a3 !important;
 }
 
 /* Nighttime routines new color (soft amber) */
 .night-item {
   background: #fff4e5 !important;
-  border-left: 4px solid #ffb347 !important;
+  border-left:6px solid #ffb347 !important;
 }
 
 
@@ -100,16 +100,16 @@ details.advanced[open]{background:#fff}
 .item.night-item *:not(.time-btn):not(.status-dot){
   background:transparent !important;
 }
-.item.winddown-item{border-left:4px solid #f59e0b !important;background:#fff !important}
-.item.night-item{border-left:4px solid #f59e0b !important}
+.item.winddown-item{border-left:6px solid #f59e0b !important;background:#fff !important}
+.item.night-item{border-left:6px solid #f59e0b !important}
 
 
-.winddown-purple{border-left:4px solid #d8b4fe !important;background:#fff !important}
-.goodmorning-amber{border-left:4px solid #f59e0b !important;background:#fff !important}
+.winddown-purple{border-left:6px solid #d8b4fe !important;background:#fff !important}
+.goodmorning-amber{border-left:6px solid #f59e0b !important;background:#fff !important}
 
 
-.activity-blue{border-left:4px solid #93c5fd !important;background:#fff !important}
-.nap-purple{border-left:4px solid #d8b4fe !important;background:#fff !important}
+.activity-blue{border-left:6px solid #93c5fd !important;background:#fff !important}
+.nap-purple{border-left:6px solid #d8b4fe !important;background:#fff !important}
 
 </style>
 </head>
@@ -136,21 +136,21 @@ details.advanced[open]{background:#fff}
 <div class="field section-gap"><label>Later wake windows</label><input id="laterWWRange" value="55-65"><div class="hint" id="laterWWRangeHint"></div></div>
 <div class="field section-gap"><label>First nap</label><input id="firstNapRange" value="50-75"><div class="hint" id="firstNapRangeHint"></div></div>
 <div class="field section-gap"><label>Regular naps</label><input id="regularNapRange" value="90-120"><div class="hint" id="regularNapRangeHint"></div></div>
-<div class="field section-gap"><label>Long afternoon nap</label><input id="longNapRange" value="160-180"><div class="hint" id="longNapRangeHint"></div></div>
+<div class="field section-gap"><label>Long afternoon nap</label><input id="longNapRange" value="180"><div class="hint" id="longNapRangeHint"></div></div>
 <div class="field section-gap"><label>Feed interval</label><input id="feedRange" value="140-180"><div class="hint" id="feedRangeHint"></div></div>
 <details class="advanced" open>
 <summary>Advanced settings</summary>
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes" selected>Yes</option><option value="no" selected>No</option></select></div>
+<div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes">Yes</option><option value="no" selected>No</option></select></div>
 <div id="dreamFeedWrap" class="field"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
 </div>
 
 <div class="quad">
 <div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
 <div id="longNapExceptionWrap" class="field"><label>Long nap feed interval exception</label><input id="longNapFeedRange" value="210"><div class="hint" id="longNapFeedRangeHint"></div></div>
-<div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
+<div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
 <div class="field"><label>Bath</label><select id="includeBath"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
 </div>
 
@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v87';
+const STORAGE_KEY='babyflow_v88';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -287,8 +287,8 @@ function updateConditionalFields(){
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','windDownLengthHint']].forEach(([i,h])=>{ if($(h)) $(h).textContent=pretty(parseInt($(i).value||'0',10)); }); updateConditionalFields(); }
 function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','trackFeedDurations','fullFeedLength','includeDigest','digestLength','includeWindDown','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='yes'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='160-180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210'; $('useLongNapException').value='yes'; $('includeBath').value='yes'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='5'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; $('trackFeedDurations').value='yes'; $('fullFeedLength').value='20'; $('includeDigest').value='yes'; $('digestLength').value='10'; $('includeWindDown').value='yes'; $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
-function loadExample(){ clearAll(); $('useDreamFeed').value='yes'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='no'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210'; $('useLongNapException').value='yes'; $('includeBath').value='yes'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; $('trackFeedDurations').value='yes'; $('fullFeedLength').value='20'; $('includeDigest').value='yes'; $('digestLength').value='10'; $('includeWindDown').value='yes'; $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
+function loadExample(){ clearAll(); $('useDreamFeed').value='no'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
   $('selectedDate').value = localDateStr();
   loadStoredActuals();
@@ -531,7 +531,7 @@ function generateTimeline(){
   function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
     const t = actual ? actual.time : Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes);
-    events.push({key, type:'feed', title, time:t, start:t, end:t + fullFeedMinutes, feedDuration:fullFeedMinutes, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(t + fullFeedMinutes)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested', durationText:trackFeedDurations ? pretty(fullFeedMinutes) : pretty(t-lastFeed)+' since '+lastFeedLabel});
+    events.push({key, type:'feed', title, time:t, start:t, end:t + fullFeedMinutes, feedDuration:fullFeedMinutes, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(t + fullFeedMinutes)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = t;
     lastFullFeedStart = t;
     lastFeedLabel = title;
@@ -543,7 +543,7 @@ function generateTimeline(){
     let s = actual ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance);
     let e = actual ? actual.end : s + duration;
     const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
-    events.push({key, type:'nap', customClass:'nap-purple', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `${pretty(s-prevNap.end)} since ${prevNap.title}` : '', chipType:'suggested', durationText:pretty(e-s)});
+    events.push({key, type:'nap', customClass:'nap-purple', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `After ${pretty(s-prevNap.end)} WW` : '', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
   }
 
@@ -557,7 +557,7 @@ function generateTimeline(){
   let nap3Start = nap3Actual ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance);
   let nap3End = nap3Actual ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
   const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
-  events.push({key:'nap-3', type:'nap', customClass:'nap-purple', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `${pretty(nap3Start-prevNapForNap3.end)} since ${prevNapForNap3.title}` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
+  events.push({key:'nap-3', type:'nap', customClass:'nap-purple', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `After ${pretty(nap3Start-prevNapForNap3.end)} WW` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
   const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
 
@@ -577,7 +577,6 @@ function generateTimeline(){
       feed3Event.feedDuration = fullFeedMinutes;
       feed3Event.displayTime = trackFeedDurations ? `${ts(adjustedFeed3)} – ${ts(adjustedFeed3 + fullFeedMinutes)}` : ts(adjustedFeed3);
       feed3Event.note = trackFeedDurations ? `${pretty(adjustedFeed3 - (feed2Event ? feed2Event.time : 0))} since Feed 2` : '';
-      feed3Event.durationText = trackFeedDurations ? pretty(fullFeedMinutes) : pretty(adjustedFeed3 - (feed2Event ? feed2Event.time : 0)) + ' since Feed 2';
       lastFeed = adjustedFeed3;
       lastFullFeedStart = adjustedFeed3;
       lastFeedLabel = 'Feed 3';
@@ -611,7 +610,7 @@ function generateTimeline(){
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
     let nap5End = nap5Actual ? nap5Actual.end : nap5Start + 45;
     const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
-    events.push({key:'nap-5', type:'nap', customClass:'nap-purple', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `${pretty(nap5Start-prevNapForNap5.end)} since ${prevNapForNap5.title}` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
+    events.push({key:'nap-5', type:'nap', customClass:'nap-purple', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `After ${pretty(nap5Start-prevNapForNap5.end)} WW` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
     const nightCapActual = actuals['night-cap'];
     const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
@@ -623,7 +622,7 @@ function generateTimeline(){
     nightCapStart = Math.min(nightCapStart, nap5End + laterWW.max - totalTail);
     nightCapStart = Math.max(nightCapStart, nap5End);
 
-    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, start:nightCapStart, end:nightCapStart + NIGHT_CAP_MINUTES, feedDuration:NIGHT_CAP_MINUTES, displayTime:trackFeedDurations ? `${ts(nightCapStart)} – ${ts(nightCapStart + NIGHT_CAP_MINUTES)}` : ts(nightCapStart), note: trackFeedDurations ? `${pretty(nightCapStart-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested', durationText:trackFeedDurations ? pretty(NIGHT_CAP_MINUTES) : pretty(nightCapStart-lastFeed)+' since '+lastFeedLabel});
+    events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, start:nightCapStart, end:nightCapStart + NIGHT_CAP_MINUTES, feedDuration:NIGHT_CAP_MINUTES, displayTime:trackFeedDurations ? `${ts(nightCapStart)} – ${ts(nightCapStart + NIGHT_CAP_MINUTES)}` : ts(nightCapStart), note: trackFeedDurations ? `${pretty(nightCapStart-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = nightCapStart;
     lastFeedLabel = 'Night Cap';
     bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
@@ -683,7 +682,7 @@ function generateTimeline(){
 
   const goodnightActual = actuals['goodnight'];
   const goodnightTime = goodnightActual ? goodnightActual.time : tailStart;
-  if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:(()=>{const lastNap=events.filter(ev=>ev.type==='nap').slice(-1)[0]; return lastNap ? `${pretty(goodnightTime-lastNap.end)} since ${lastNap.title}` : ''})(), chipType:'routine'}});
+  if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:(()=>{const lastNap=events.filter(ev=>ev.type==='nap').slice(-1)[0]; return lastNap ? `After ${pretty(goodnightTime-lastNap.end)} WW` : ''})(), chipType:'routine'}});
   tailStart = goodnightTime;
 
   const current = nowMinutes();
