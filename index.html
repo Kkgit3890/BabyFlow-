@@ -111,6 +111,8 @@ details.advanced[open]{background:#fff}
 .activity-blue{border-left:6px solid #93c5fd !important;background:#fff !important}
 .nap-purple{border-left:6px solid #d8b4fe !important;background:#fff !important}
 
+
+.activity-feed-green{border-left:6px solid #86efac !important;background:#fff !important}
 </style>
 </head>
 <body><div class="wrap">
@@ -193,11 +195,15 @@ details.advanced[open]{background:#fff}
 
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType"><option value="Tummy time">Tummy time</option><option value="Story time">Story time</option><option value="Walk">Walk</option><option value="Swing">Swing</option><option value="Playtime">Playtime</option>
         <option value="Sunshine">Sunshine</option>
-        <option value="Stretches">Stretches</option></select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
+        <option value="Stretches">Stretches</option>
+        <option value="Sunshine and stretches">Sunshine and stretches</option>
+        <option value="Babywear (Chores)">Babywear (Chores)</option>
+        <option value="Nightcap">Nightcap</option>
+        <option value="Wind-down">Wind-down</option></select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v90';
+const STORAGE_KEY='babyflow_v91';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -653,7 +659,9 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:'activity-blue', type:'routine', title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
+    const activityClass = a.title === 'Nightcap' ? 'activity-feed-green' : (a.title === 'Wind-down' ? 'winddown-purple' : 'activity-blue');
+    const activityType = a.title === 'Nightcap' ? 'feed' : (a.title === 'Wind-down' ? 'nap' : 'routine');
+    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
 
   const bathSelected = $('includeBath').value==='yes';
