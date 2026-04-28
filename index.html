@@ -100,12 +100,12 @@ details.advanced[open]{background:#fff}
 .item.night-item *:not(.time-btn):not(.status-dot){
   background:transparent !important;
 }
-.item.winddown-item{border-left:6px solid #f59e0b !important;background:#fff !important}
-.item.night-item{border-left:6px solid #f59e0b !important}
+.item.winddown-item{border-left:6px solid #fb923c !important;background:#fff !important}
+.item.night-item{border-left:6px solid #fb923c !important}
 
 
 .winddown-purple{border-left:6px solid #d8b4fe !important;background:#fff !important}
-.goodmorning-amber{border-left:6px solid #f59e0b !important;background:#fff !important}
+.goodmorning-amber{border-left:6px solid #fb923c !important;background:#fff !important}
 
 
 .activity-blue{border-left:6px solid #93c5fd !important;background:#fff !important}
@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v88';
+const STORAGE_KEY='babyflow_v89';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -526,7 +526,7 @@ function generateTimeline(){
   const nap1Actual = actuals['nap-1'];
   let nap1Start = nap1Actual ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance);
   let nap1End = nap1Actual ? nap1Actual.end : nap1Start + firstNapC;
-  events.push({key:'nap-1', type:'nap', customClass:'nap-purple', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
+  events.push({key:'nap-1', type:'nap', customClass:'nap-purple', title:'Nap 1', note: `After ${pretty(nap1Start - goodMorningTime)} WW`, start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:'', chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
   function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
