@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v92';
+const STORAGE_KEY='babyflow_v94';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -212,7 +212,7 @@ const toInputTime=m=>{if(m==null||isNaN(m)) return ''; m=((m%1440)+1440)%1440; r
 const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%60; if(!h) return `${mi} min${mi===1?'':'s'}`; if(!mi) return `${h} hr${h===1?'':'s'}`; return `${h} hr${h===1?'':'s'} ${mi} min${mi===1?'':'s'}`;};
 const nowMinutes=()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();};
 const localDateStr=()=>{const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;};
-function skipField(id){ const el=$(id); if(el){ el.value=''; saveState(); updateHints(); } }
+function skipField(id){ const el=$(id); if(el){ el.value=''; updateHints(); saveState(); generateTimeline(); } }catch(e){ console.error(e); } } } }
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
@@ -274,7 +274,19 @@ function updateConditionalFields(){
   if(afterBathWrap) afterBathWrap.classList.toggle('hidden', !bathSelected);
 }
 
-function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','windDownLengthHint']].forEach(([i,h])=>{ if($(h)) $(h).textContent=pretty(parseInt($(i).value||'0',10)); }); updateConditionalFields(); }
+function updateHints(){
+  [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{
+    if(!$(i) || !$(h)) return;
+    let r=rng($(i).value);
+    $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';
+  });
+  [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','windDownLengthHint']].forEach(([i,h])=>{
+    if(!$(i) || !$(h)) return;
+    const v=$(i).value;
+    $(h).textContent=v?pretty(parseInt(v,10)):'';
+  });
+  updateConditionalFields();
+}
 function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
 function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
@@ -549,7 +561,7 @@ function generateTimeline(){
   const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
   events.push({key:'nap-3', type:'nap', customClass:'nap-purple', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `After ${pretty(nap3Start-prevNapForNap3.end)} WW` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
-  const activeLongRange = ($('useLongNapException').value==='yes' && longNapFeedR) ? longNapFeedR : feedR;
+  const activeLongRange = (!!$('longNapFeedRange').value && longNapFeedR) ? longNapFeedR : feedR;
 
   if(!actuals['feed-3']){
     const feed3Event = events.find(ev => ev.key === 'feed-3');
@@ -574,7 +586,7 @@ function generateTimeline(){
     }
   }
 
-  if($('useLongNapException').value==='no' && !actuals['nap-3']){
+  if(!($('longNapFeedRange')?.value) && !actuals['nap-3']){
     const nap3Event = events.find(ev => ev.key === 'nap-3');
     const latestAllowedNap3End = lastFeed + feedR.max;
     if(nap3Event && latestAllowedNap3End < nap3End){
@@ -603,9 +615,9 @@ function generateTimeline(){
     events.push({key:'nap-5', type:'nap', customClass:'nap-purple', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `After ${pretty(nap5Start-prevNapForNap5.end)} WW` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
     const nightCapActual = actuals['night-cap'];
-    const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
-    const routineLen = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
-    const bedtimeTopLen = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
+    const bathLen = !!$('bathLength').value ? parseInt($('bathLength').value||'10',10) : 0;
+    const routineLen = parseInt((!!$('bathLength').value ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
+    const bedtimeTopLen = !!$('bedTopOffLength').value ? parseInt($('bedTopOffLength').value||'5',10) : 0;
     const totalTail = NIGHT_CAP_MINUTES + bathLen + routineLen + bedtimeTopLen;
 
     let nightCapStart = nightCapActual ? nightCapActual.time : Math.max(nap5End + laterWW.min, lastFullFeedStart + fullFeedMinutes);
@@ -619,9 +631,9 @@ function generateTimeline(){
   } else {
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
-    const bathLen = $('includeBath').value==='yes' ? parseInt($('bathLength').value||'10',10) : 0;
-    const routineLen = parseInt(($('includeBath').value==='yes' ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
-    const bedtimeTopLen = $('includeBedtimeTopOff').value==='yes' ? TOP_OFF_MINUTES : 0;
+    const bathLen = !!$('bathLength').value ? parseInt($('bathLength').value||'10',10) : 0;
+    const routineLen = parseInt((!!$('bathLength').value ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
+    const bedtimeTopLen = !!$('bedTopOffLength').value ? parseInt($('bedTopOffLength').value||'5',10) : 0;
     const totalTail = bathLen + routineLen + bedtimeTopLen;
     bedtimeStart = Math.max(nap4.end + laterWW.min - totalTail, lastFullFeedStart + fullFeedMinutes);
     bedtimeStart = Math.min(bedtimeStart, nap4.end + laterWW.max - totalTail);
