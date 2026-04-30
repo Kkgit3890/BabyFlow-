@@ -203,7 +203,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v100';
+const STORAGE_KEY='babyflow_v101';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -785,6 +785,7 @@ function generateTimeline(){
     return ev?.groupLabel || ev?.title || '';
   }
   const headerOrder = h => {
+    if(h === 'Dream feed') return 0;
     if(h === 'Wake Window #1') return 1;
     if(h === 'Nap #1') return 2;
     if(h === 'Wake Window #2') return 3;
