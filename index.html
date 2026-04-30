@@ -113,6 +113,10 @@ details.advanced[open]{background:#fff}
 
 
 .activity-feed-green{border-left:6px solid #86efac !important;background:#fff !important}
+
+.compact-field{display:flex;gap:8px;align-items:center}
+.compact-field input{flex:1}
+.skip-btn{white-space:nowrap}
 </style>
 </head>
 <body><div class="wrap">
@@ -145,19 +149,13 @@ details.advanced[open]{background:#fff}
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Use dream feed</label><select id="useDreamFeed"><option value="yes">Yes</option><option value="no" selected>No</option></select></div>
-<div id="dreamFeedWrap" class="field"><label>Dream feed time</label><input id="dreamFeedTime" type="time"></div>
+<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'dreamFeedTime\')">Skip</button></div></div>
 </div>
 
 <div class="quad">
-<div class="field"><label>Use long nap exception</label><select id="useLongNapException"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
-<div id="longNapExceptionWrap" class="field"><label>Long nap feed interval exception</label><input id="longNapFeedRange" value="210"><div class="hint" id="longNapFeedRangeHint"></div></div>
+<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\')">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
-<div class="field"><label>Bath</label><select id="includeBath"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
-</div>
-
-<div class="grid">
-<div id="bathLengthWrap" class="field"><label>Bath length (min)</label><input id="bathLength" type="number" value="10"><div class="hint" id="bathLengthHint"></div></div>
+<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bathLength\')">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
 <div id="routineLengthBathWrap" class="field"><label>After-bath routine (min)</label><input id="routineLengthBath" type="number" value="10"><div class="hint" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
@@ -165,21 +163,17 @@ details.advanced[open]{background:#fff}
 </div>
 
 <div class="grid">
-<div class="field"><label>Bedtime top-off</label><select id="includeBedtimeTopOff"><option value="yes" selected>Include</option><option value="no">Skip</option></select></div>
-<div id="bedTopOffLengthWrap" class="field"><label>Bedtime top-off length (min)</label><input id="bedTopOffLength" type="number" value="5"><div class="hint" id="bedTopOffLengthHint"></div></div>
+<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bedTopOffLength\')">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
 </div>
 
 <div class="grid">
-<div class="field"><label>Track feed durations</label><select id="trackFeedDurations"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
-<div id="feedDurationWrap" class="field"><label>Full feed length (min)</label><input id="fullFeedLength" type="number" value="20"><div class="hint" id="fullFeedLengthHint"></div></div>
+<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'fullFeedLength\')">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest</label><select id="includeDigest"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
-<div id="digestLengthWrap" class="field"><label>Digest length (min)</label><input id="digestLength" type="number" value="10"><div class="hint" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'digestLength\')">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down before naps</label><select id="includeWindDown"><option value="no" selected>Skip</option><option value="yes" selected>Include</option></select></div>
-<div id="windDownLengthWrap" class="field"><label>Wind-down length (min)</label><input id="windDownLength" type="number" value="5"><div class="hint" id="windDownLengthHint"></div></div>
+<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'windDownLength\')">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
 </div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
@@ -203,7 +197,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v91';
+const STORAGE_KEY='babyflow_v92';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -218,6 +212,7 @@ const toInputTime=m=>{if(m==null||isNaN(m)) return ''; m=((m%1440)+1440)%1440; r
 const pretty=m=>{if(m==null||isNaN(m)) return ''; let h=Math.floor(m/60), mi=m%60; if(!h) return `${mi} min${mi===1?'':'s'}`; if(!mi) return `${h} hr${h===1?'':'s'}`; return `${h} hr${h===1?'':'s'} ${mi} min${mi===1?'':'s'}`;};
 const nowMinutes=()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();};
 const localDateStr=()=>{const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;};
+function skipField(id){ const el=$(id); if(el){ el.value=''; saveState(); updateHints(); } }
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
@@ -269,32 +264,21 @@ function clearActuals(){
 }
 
 function updateConditionalFields(){
-  let bathSkip=$('includeBath').value==='no';
-  $('bathLengthWrap').classList.toggle('hidden',bathSkip);
-  $('routineLengthBathWrap').classList.toggle('hidden',bathSkip);
-
+  const bathSelected = !!$('bathLength')?.value;
   const noBathField = $('routineLengthNoBath');
   if(noBathField){
     const noBathWrap = noBathField.closest('.field') || noBathField.parentElement;
-    if(noBathWrap) noBathWrap.classList.toggle('hidden', !bathSkip);
+    if(noBathWrap) noBathWrap.classList.toggle('hidden', bathSelected);
   }
-
-  $('bedTopOffLengthWrap').classList.toggle('hidden',$('includeBedtimeTopOff').value==='no');
-  $('dreamFeedWrap').classList.toggle('hidden',$('useDreamFeed').value==='no');
-  $('feedDurationWrap').classList.toggle('hidden',$('trackFeedDurations').value==='no');
-  $('digestLengthWrap').classList.toggle('hidden',$('includeDigest').value==='no');
-  $('windDownLengthWrap').classList.toggle('hidden',$('includeWindDown').value==='no');
-
-  const longNapWrap = $('longNapExceptionWrap');
-  if(longNapWrap){
-    longNapWrap.classList.toggle('hidden', $('useLongNapException').value==='no');
-  }
+  const afterBathWrap = $('routineLengthBathWrap');
+  if(afterBathWrap) afterBathWrap.classList.toggle('hidden', !bathSelected);
 }
+
 function updateHints(){ [['firstWWRange','firstWWRangeHint'],['laterWWRange','laterWWRangeHint'],['firstNapRange','firstNapRangeHint'],['regularNapRange','regularNapRangeHint'],['longNapRange','longNapRangeHint'],['feedRange','feedRangeHint'],['longNapFeedRange','longNapFeedRangeHint']].forEach(([i,h])=>{let r=rng($(i).value); $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';}); [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','windDownLengthHint']].forEach(([i,h])=>{ if($(h)) $(h).textContent=pretty(parseInt($(i).value||'0',10)); }); updateConditionalFields(); }
-function saveState(){ let ids=['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','trackFeedDurations','fullFeedLength','includeDigest','digestLength','includeWindDown','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
+function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value=''); $('useDreamFeed').value='no'; $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210'; $('useLongNapException').value='yes'; $('includeBath').value='yes'; $('includeBedtimeTopOff').value='yes'; $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5'; $('trackFeedDurations').value='yes'; $('fullFeedLength').value='20'; $('includeDigest').value='yes'; $('digestLength').value='10'; $('includeWindDown').value='yes'; $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
-function loadExample(){ clearAll(); $('useDreamFeed').value='no'; $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
+function loadExample(){ clearAll();  $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
   $('selectedDate').value = localDateStr();
   loadStoredActuals();
@@ -472,11 +456,11 @@ function renderTimeControl(ev){
 
 function generateTimeline(){
   updateHints();
-  const useDreamFeed=$('useDreamFeed').value==='yes';
-  const trackFeedDurations = $('trackFeedDurations').value==='yes';
-  const includeDigest = $('includeDigest').value==='yes';
+  const useDreamFeed=!!$('dreamFeedTime').value;
+  const trackFeedDurations = !!$('fullFeedLength').value;
+  const includeDigest = !!$('digestLength').value;
   const digestLength = parseInt(($('digestLength')?.value)||'10',10);
-  const includeWindDown = $('includeWindDown').value==='yes';
+  const includeWindDown = !!$('windDownLength').value;
   const windDownLength = parseInt(($('windDownLength')?.value)||'5',10);
   const fullFeedMinutes = parseInt(($('fullFeedLength')?.value)||String(DEFAULT_FULL_FEED_MINUTES),10);
   const feedBlockMinutes = fullFeedMinutes + (includeDigest ? digestLength : 0);
@@ -489,7 +473,7 @@ function generateTimeline(){
   const events=[];
 
   if(useDreamFeed){
-    events.push({key:'dream-feed', type:'routine', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
+    events.push({key:'dream-feed', type:'feed', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
   }
   events.push({key:'good-morning', customClass:'goodmorning-amber', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
 
@@ -664,7 +648,7 @@ function generateTimeline(){
     renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
 
-  const bathSelected = $('includeBath').value==='yes';
+  const bathSelected = !!$('bathLength').value;
   const bathLen = bathSelected ? parseInt($('bathLength').value||'10',10) : 0;
   const routineLen = parseInt((bathSelected ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
   let tailStart = bedtimeStart;
@@ -681,11 +665,11 @@ function generateTimeline(){
   if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine'}});
   tailStart = routineStart + routineLen;
 
-  if($('includeBedtimeTopOff').value==='yes' && !deletedEventKeys.includes('bedtime-topoff')){
+  if(!!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
     const topActual = actuals['bedtime-topoff'];
     const topStart = topActual ? topActual.time : tailStart;
     renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine'}});
-    tailStart = topStart + TOP_OFF_MINUTES;
+    tailStart = topStart + parseInt($('bedTopOffLength').value||'5',10);
   }
 
   const goodnightActual = actuals['goodnight'];
@@ -818,7 +802,7 @@ function generateTimeline(){
   }
   flattenedEvents.push({title:'Bedtime routine', start:bedtimeCursor, end:bedtimeCursor + routineLen, type:'routine'});
   bedtimeCursor += routineLen;
-  if($('includeBedtimeTopOff').value==='yes' && !deletedEventKeys.includes('bedtime-topoff')){
+  if(!!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
     flattenedEvents.push({title:'Bedtime top-off', start:bedtimeCursor, end:bedtimeCursor + TOP_OFF_MINUTES, type:'routine'});
     bedtimeCursor += TOP_OFF_MINUTES;
   }
@@ -846,9 +830,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
   loadStoredActuals();
   updateHints();
-  ['useDreamFeed','dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','useLongNapException','includeBath','includeBedtimeTopOff','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','trackFeedDurations','fullFeedLength','includeDigest','digestLength','includeWindDown','windDownLength'].forEach(id=>{
-    $(id).addEventListener('change',()=>{saveState();updateHints();});
-    $(id).addEventListener('input',updateHints);
+  ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength'].forEach(id=>{
+    if($(id)) $(id).addEventListener('change',()=>{saveState();updateHints();});
+    if($(id)) $(id).addEventListener('input',updateHints);
   });
   $('selectedDate').addEventListener('change',()=>{ loadStoredActuals(); generateTimeline(); });
 });
