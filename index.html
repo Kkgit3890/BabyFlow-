@@ -149,13 +149,13 @@ details.advanced[open]{background:#fff}
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'dreamFeedTime\'); return false;">Skip</button></div></div>
+<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('dreamFeedTime'); return false;">Skip</button></div></div>
 </div>
 
 <div class="quad">
-<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
+<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('longNapFeedRange'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
-<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bathLength\'); return false;">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
+<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
 <div id="routineLengthBathWrap" class="field"><label>After-bath routine (min)</label><input id="routineLengthBath" type="number" value="10"><div class="hint" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
@@ -163,17 +163,17 @@ details.advanced[open]{background:#fff}
 </div>
 
 <div class="grid">
-<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bedTopOffLength\'); return false;">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
+<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
 </div>
 
 <div class="grid">
-<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'fullFeedLength\'); return false;">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
+<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'digestLength\'); return false;">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'windDownLength\'); return false;">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
+<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
 </div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
@@ -203,7 +203,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v98';
+const STORAGE_KEY='babyflow_v100';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -220,11 +220,12 @@ const nowMinutes=()=>{const d=new Date(); return d.getHours()*60+d.getMinutes();
 const localDateStr=()=>{const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`;};
 function skipField(id){
   const el=$(id);
-  if(!el) return;
+  if(!el) return false;
   el.value='';
   try{ updateHints(); }catch(e){ console.error(e); }
   try{ saveState(); }catch(e){ console.error(e); }
   try{ generateTimeline(); }catch(e){ console.error(e); }
+  return false;
 }
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
@@ -764,6 +765,7 @@ function generateTimeline(){
       baseKey = key;
     }
 
+    if(baseKey === 'dream-feed') return 'Dream feed';
     if(baseKey === 'good-morning' || baseKey === 'feed-1') return 'Wake Window #1';
     if(baseKey === 'nap-1') return 'Nap #1';
     if(baseKey === 'feed-2') return 'Wake Window #2';
