@@ -149,13 +149,13 @@ details.advanced[open]{background:#fff}
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'dreamFeedTime\')">Skip</button></div></div>
+<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'dreamFeedTime\'); return false;">Skip</button></div></div>
 </div>
 
 <div class="quad">
-<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\')">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
+<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
-<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bathLength\')">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
+<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bathLength\'); return false;">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
 <div id="routineLengthBathWrap" class="field"><label>After-bath routine (min)</label><input id="routineLengthBath" type="number" value="10"><div class="hint" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
@@ -163,17 +163,17 @@ details.advanced[open]{background:#fff}
 </div>
 
 <div class="grid">
-<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bedTopOffLength\')">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
+<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'bedTopOffLength\'); return false;">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
 </div>
 
 <div class="grid">
-<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'fullFeedLength\')">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
+<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'fullFeedLength\'); return false;">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'digestLength\')">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'digestLength\'); return false;">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'windDownLength\')">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
+<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'windDownLength\'); return false;">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
 </div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
@@ -187,17 +187,23 @@ details.advanced[open]{background:#fff}
 <div class="summary-card"><div class="hint">Goodnight</div><div id="goodnightCard"></div></div>
 </div></div>
 
-<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType"><option value="Tummy time">Tummy time</option><option value="Story time">Story time</option><option value="Walk">Walk</option><option value="Swing">Swing</option><option value="Playtime">Playtime</option>
-        <option value="Sunshine">Sunshine</option>
-        <option value="Stretches">Stretches</option>
-        <option value="Sunshine and stretches">Sunshine and stretches</option>
-        <option value="Babywear (Chores)">Babywear (Chores)</option>
-        <option value="Nightcap">Nightcap</option>
-        <option value="Wind-down">Wind-down</option></select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
+<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
+<option value="Babywear (Chores)">Babywear (Chores)</option>
+<option value="Nightcap">Nightcap</option>
+<option value="Playtime">Playtime</option>
+<option value="Story time">Story time</option>
+<option value="Stretches">Stretches</option>
+<option value="Sunshine">Sunshine</option>
+<option value="Sunshine and stretches">Sunshine and stretches</option>
+<option value="Swing">Swing</option>
+<option value="Tummy time">Tummy time</option>
+<option value="Walk">Walk</option>
+<option value="Wind-down">Wind-down</option>
+</select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_v95';
+const STORAGE_KEY='babyflow_v98';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -216,9 +222,9 @@ function skipField(id){
   const el=$(id);
   if(!el) return;
   el.value='';
-  updateHints();
-  saveState();
-  generateTimeline();
+  try{ updateHints(); }catch(e){ console.error(e); }
+  try{ saveState(); }catch(e){ console.error(e); }
+  try{ generateTimeline(); }catch(e){ console.error(e); }
 }
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
@@ -776,6 +782,26 @@ function generateTimeline(){
 
     return ev?.groupLabel || ev?.title || '';
   }
+  const headerOrder = h => {
+    if(h === 'Wake Window #1') return 1;
+    if(h === 'Nap #1') return 2;
+    if(h === 'Wake Window #2') return 3;
+    if(h === 'Nap #2') return 4;
+    if(h === 'Wake Window #3') return 5;
+    if(h === 'Nap #3') return 6;
+    if(h === 'Wake Window #4') return 7;
+    if(h === 'Nap #4') return 8;
+    if(h === 'Wake Window #5') return 9;
+    if(h === 'Nap #5') return 10;
+    if(h === 'Final Wake Window') return 11;
+    return 99;
+  };
+  visibleItems.sort((a,b)=>{
+    const ha=getHeaderForItem(a.ev), hb=getHeaderForItem(b.ev);
+    const orderDiff = headerOrder(ha)-headerOrder(hb);
+    if(orderDiff) return orderDiff;
+    return (a.t ?? 0) - (b.t ?? 0);
+  });
   let lastHeader = '';
   if(uiState.collapsePast && collapsedCount){
     grouped.push(`<div class="item routine-item"><div class="item-note">${collapsedCount} past event${collapsedCount===1?'':'s'} hidden</div></div>`);
