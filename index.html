@@ -211,7 +211,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v102';
+const STORAGE_KEY='babyflow_pwa_v103';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -879,18 +879,52 @@ function generateTimeline(){
   $('goodnightCard').textContent = ts(tailStart);
   saveState();
 }
-window.addEventListener('DOMContentLoaded',()=>{
-  loadState();
-  if(!$('selectedDate').value){
-    $('selectedDate').value = localDateStr();
+
+function restoreBabyFlowOnOpen(){
+  try{
+    loadState();
+    if($('selectedDate') && !$('selectedDate').value){
+      $('selectedDate').value = localDateStr();
+    }
+    loadStoredActuals();
+    updateHints();
+    if($('wakeTime') && $('wakeTime').value){
+      generateTimeline();
+    }
+  }catch(e){
+    console.error('BabyFlow restore failed:', e);
   }
-  loadStoredActuals();
-  updateHints();
+}
+
+function saveBabyFlowBeforeClose(){
+  try{ saveState(); }catch(e){ console.error('BabyFlow save failed:', e); }
+}
+
+window.addEventListener('pagehide', saveBabyFlowBeforeClose);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden') saveBabyFlowBeforeClose();
+});
+
+
+if(typeof generateTimeline === 'function' && !window.__babyFlowGenerateWrapped){
+  window.__babyFlowGenerateWrapped = true;
+  const __babyFlowOriginalGenerateTimeline = generateTimeline;
+  generateTimeline = function(){
+    const result = __babyFlowOriginalGenerateTimeline.apply(this, arguments);
+    try{ saveState(); }catch(e){}
+    return result;
+  };
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  restoreBabyFlowOnOpen();
+
   ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength'].forEach(id=>{
-    if($(id)) $(id).addEventListener('change',()=>{saveState();updateHints();});
-    if($(id)) $(id).addEventListener('input',updateHints);
+    if($(id)) $(id).addEventListener('change',()=>{ saveState(); updateHints(); });
+    if($(id)) $(id).addEventListener('input',()=>{ saveState(); updateHints(); });
   });
-  $('selectedDate').addEventListener('change',()=>{ loadStoredActuals(); generateTimeline(); });
+
+  if($('selectedDate')) $('selectedDate').addEventListener('change',()=>{ saveState(); loadStoredActuals(); generateTimeline(); });
 });
 </script>
 
