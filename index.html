@@ -17,7 +17,7 @@ input,select{width:100%;padding:10px 13px;border:1px solid var(--border);border-
 .quad .field{margin-bottom:18px}
 .section-gap{margin-bottom:26px}
 .field:first-of-type{margin-top:10px}
-.section-title{margin-bottom:6px}
+.section-title{font-size:15px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin:28px 0 12px}
 .field .hint{margin-top:2px}
 .hint{color:var(--muted);font-size:12px;min-height:16px}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.hidden{display:none}
 button{border:0;border-radius:14px;padding:12px 16px;font-size:15px;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#fff}.secondary{background:#eef2f7}.danger{background:#fff1f2;color:#9f1239}
@@ -197,7 +197,7 @@ details.advanced[open]{background:#fff}
 <div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Routine without bath </label><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
+<div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
 </div>
 
 <div class="grid">
@@ -241,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v109';
+const STORAGE_KEY='babyflow_pwa_v110';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -539,7 +539,7 @@ function generateTimeline(){
   if(useDreamFeed){
     events.push({key:'dream-feed', type:'feed', title:'Dream feed', time:dream, displayTime:ts(dream), note:'Starting point for feeds for the day.', chipType:'actual'});
   }
-  events.push({key:'good-morning', customClass:'goodmorning-amber', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'Start of day.', chipType:'actual'});
+  events.push({key:'good-morning', customClass:'goodmorning-amber', type:'routine', title:'Good morning ☀️', time:wake, displayTime:ts(wake), note:'', chipType:'actual'});
 
   let lastFeed = useDreamFeed ? dream : null;
   let lastFullFeedStart = useDreamFeed ? dream : null;
@@ -842,6 +842,13 @@ function generateTimeline(){
     if(orderDiff) return orderDiff;
     return (a.t ?? 0) - (b.t ?? 0);
   });
+  function getHeaderDisplayForItem(ev, header){
+    if(ev && ev.type==='nap' && ev.note && ev.note.startsWith('After ')){
+      const ww = ev.note.replace(/^After\s+/, '');
+      return `${header} - After ${ww}`;
+    }
+    return header;
+  }
   let lastHeader = '';
   if(uiState.collapsePast && collapsedCount){
     grouped.push(`<div class="item routine-item"><div class="item-note">${collapsedCount} past event${collapsedCount===1?'':'s'} hidden</div></div>`);
