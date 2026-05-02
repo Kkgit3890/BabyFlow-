@@ -211,7 +211,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v103';
+const STORAGE_KEY='babyflow_pwa_v104';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -671,7 +671,7 @@ function generateTimeline(){
       renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', customClass:'nap-purple', title:'Wind-down', customClass:'winddown-purple', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
     }
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
-    if(includeDigest && ev.type==='feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
+    if(includeDigest && ev.type==='feed' && ev.key!=='dream-feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
       const digestStart = ev.end!=null ? ev.end : ev.time;
       renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Digest', time:digestStart, start:digestStart, end:digestStart + digestLength, displayTime:`${ts(digestStart)} – ${ts(digestStart + digestLength)}`, note:'', chipType:'suggested'}});
     }
@@ -840,7 +840,7 @@ function generateTimeline(){
     } else if(ev.type==='feed'){
       const feedEnd = ev.end!=null ? ev.end : ev.time;
       flattenedEvents.push({title:ev.title, start:ev.time, end:feedEnd, type:ev.type});
-      if(includeDigest && !deletedEventKeys.includes(`digest-${ev.key}`)){
+      if(includeDigest && ev.key!=='dream-feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
         flattenedEvents.push({title:'Digest', start:feedEnd, end:feedEnd + digestLength, type:'feed'});
       }
     } else {
