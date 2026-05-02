@@ -194,7 +194,7 @@ details.advanced[open]{background:#fff}
 <div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('longNapFeedRange'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
 <div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
-<div id="routineLengthBathWrap" class="field"><label>After-bath routine </label><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
+<div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
 <div class="field"><label>Routine without bath </label><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
@@ -241,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v107';
+const STORAGE_KEY='babyflow_pwa_v109';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -509,7 +509,7 @@ function renderTimeControl(ev){
           <button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>
           <span class="status-dot ${dotClass}" onclick="quickToggleActual('${ev.key}')" title="${hasActual ? 'Marked actual — tap to clear' : 'Tap to mark actual'}"></span>
         </span>
-        ${ev.durationText?`<div class="item-duration-right">(${ev.durationText})</div>`:''}
+        ${(ev.durationText && ev.type!=='feed')?`<div class="item-duration-right">(${ev.durationText})</div>`:''}
       </div>
     </div>
     ${ev.note?`<div class="item-note">${ev.note}</div>`:''}
@@ -568,9 +568,8 @@ function generateTimeline(){
       end:feed1Time + fullFeedMinutes,
       feedDuration:fullFeedMinutes,
       displayTime:trackFeedDurations ? `${ts(feed1Time)} – ${ts(feed1Time + fullFeedMinutes)}` : ts(feed1Time),
-      note:'',
-      chipType:'suggested',
-      durationText:trackFeedDurations ? pretty(fullFeedMinutes) : (useDreamFeed ? pretty(feed1Time-lastFeed)+' since '+lastFeedLabel : '')
+      note: useDreamFeed ? `${pretty(feed1Time-lastFeed)} since Dream feed` : '',
+      chipType:'suggested'
     });
     lastFeed = feed1Time;
     lastFullFeedStart = feed1Time;
