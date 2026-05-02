@@ -117,6 +117,22 @@ details.advanced[open]{background:#fff}
 .compact-field{display:flex;gap:8px;align-items:center}
 .compact-field input{flex:1}
 .skip-btn{white-space:nowrap}
+
+.unit-input{position:relative;flex:1}
+.unit-input input{padding-right:64px}
+.unit-input::after{
+  content:"mins";
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#64748b;
+  font-weight:700;
+  pointer-events:none;
+}
+.compact-field .unit-input input{width:100%}
+.hint.unit-hidden{display:none}
+
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -163,25 +179,25 @@ details.advanced[open]{background:#fff}
 <div class="quad">
 <div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('longNapFeedRange'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
-<div class="field"><label>Bath length (min)</label><div class="compact-field"><input id="bathLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button></div><div class="hint" id="bathLengthHint"></div></div>
-<div id="routineLengthBathWrap" class="field"><label>After-bath routine (min)</label><input id="routineLengthBath" type="number" value="10"><div class="hint" id="routineLengthBathHint"></div></div>
+<div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
+<div id="routineLengthBathWrap" class="field"><label>After-bath routine </label><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Routine without bath (min)</label><input id="routineLengthNoBath" type="number" value="15"><div class="hint" id="routineLengthNoBathHint"></div></div>
-</div>
-
-<div class="grid">
-<div class="field"><label>Bedtime top-off length (min)</label><div class="compact-field"><input id="bedTopOffLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button></div><div class="hint" id="bedTopOffLengthHint"></div></div>
+<div class="field"><label>Routine without bath </label><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
 </div>
 
 <div class="grid">
-<div class="field"><label>Full feed length (min)</label><div class="compact-field"><input id="fullFeedLength" type="number" value="20"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button></div><div class="hint" id="fullFeedLengthHint"></div></div>
+<div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
+</div>
+
+<div class="grid">
+<div class="field"><label>Full feed length </label><div class="compact-field"><span class="unit-input"><input id="fullFeedLength" type="number" value="20"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest length (min)</label><div class="compact-field"><input id="digestLength" type="number" value="10"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button></div><div class="hint" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest length </label><div class="compact-field"><span class="unit-input"><input id="digestLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down length (min)</label><div class="compact-field"><input id="windDownLength" type="number" value="5"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button></div><div class="hint" id="windDownLengthHint"></div></div>
+<div class="field"><label>Wind-down length </label><div class="compact-field"><span class="unit-input"><input id="windDownLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="windDownLengthHint"></div></div>
 </div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
@@ -211,7 +227,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v104';
+const STORAGE_KEY='babyflow_pwa_v106';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
