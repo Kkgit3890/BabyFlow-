@@ -118,17 +118,31 @@ details.advanced[open]{background:#fff}
 .compact-field input{flex:1}
 .skip-btn{white-space:nowrap}
 
-.unit-input{position:relative;flex:1}
-.unit-input input{padding-right:64px}
+.unit-input{
+  position:relative;
+  width:150px;
+  flex:0 0 150px;
+  display:inline-block;
+}
+.unit-input input{
+  width:100%;
+  padding-right:50px;
+}
 .unit-input::after{
   content:"mins";
   position:absolute;
-  right:16px;
+  right:14px;
   top:50%;
   transform:translateY(-50%);
-  color:#64748b;
-  font-weight:700;
+  color:#94a3b8;
+  font-size:14px;
+  font-weight:500;
   pointer-events:none;
+}
+.compact-field{
+  display:flex;
+  gap:10px;
+  align-items:center;
 }
 .compact-field .unit-input input{width:100%}
 .hint.unit-hidden{display:none}
@@ -227,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v106';
+const STORAGE_KEY='babyflow_pwa_v107';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
