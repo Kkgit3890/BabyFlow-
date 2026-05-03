@@ -104,7 +104,7 @@ details.advanced[open]{background:#fff}
 .item.night-item{border-left:6px solid #fb923c !important}
 
 
-.winddown-purple{border-left:6px solid #d8b4fe !important;background:#fff !important}
+.activity-blue{border-left:6px solid #d8b4fe !important;background:#fff !important}
 .goodmorning-amber{border-left:6px solid #fb923c !important;background:#fff !important}
 
 
@@ -241,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v115';
+const STORAGE_KEY='babyflow_pwa_v116';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -697,7 +697,7 @@ function generateTimeline(){
     if(!ev.groupLabel) ev.groupLabel = ev.title;
     if(includeWindDown && ev.type==='nap' && !deletedEventKeys.includes(`winddown-${ev.key}`)){
       const windDownStart = (ev.start ?? ev.time) - windDownLength;
-      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', customClass:'nap-purple', title:'Wind-down', customClass:'winddown-purple', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
+      renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', customClass:'nap-purple', title:'Wind-down', customClass:'activity-blue', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
     }
     renderItems.push({t: ev.time ?? ev.start, html: '', ev});
     if(includeDigest && ev.type==='feed' && ev.key!=='dream-feed' && !deletedEventKeys.includes(`digest-${ev.key}`)){
@@ -706,7 +706,7 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    const activityClass = a.title === 'Nightcap' ? 'activity-feed-green' : (a.title === 'Wind-down' ? 'winddown-purple' : 'activity-blue');
+    const activityClass = a.title === 'Nightcap' ? 'activity-feed-green' : (a.title === 'Wind-down' ? 'activity-blue' : 'activity-blue');
     const activityType = a.title === 'Nightcap' ? 'feed' : (a.title === 'Wind-down' ? 'nap' : 'routine');
     renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
@@ -875,7 +875,7 @@ function generateTimeline(){
     if(deletedEventKeys.includes(ev.key)) return;
     if(ev.type==='nap'){
       if(includeWindDown){
-        flattenedEvents.push({title:'Wind-down', customClass:'winddown-purple', start:ev.start - windDownLength, end:ev.start, type:'nap'});
+        flattenedEvents.push({title:'Wind-down', customClass:'activity-blue', start:ev.start - windDownLength, end:ev.start, type:'nap'});
       }
       flattenedEvents.push({title:ev.title, start:ev.start, end:ev.end, type:'nap'});
     } else if(ev.type==='feed'){
