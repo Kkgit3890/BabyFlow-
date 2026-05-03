@@ -241,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v116';
+const STORAGE_KEY='babyflow_pwa_v117';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -550,12 +550,11 @@ function generateTimeline(){
   let feed1Allowed = true;
 
   if(useDreamFeed){
-    const feed1ProjectedBase = Math.max(dream + feedR.min, wake + 15);
-    const feed1Projected = (wake >= dream + feedR.min && wake <= dream + feedR.max) ? wake : feed1ProjectedBase;
-    feed1Time = feed1Actual ? feed1Actual.time : feed1Projected;
+    const feed1ProjectedBase = wake + 5;
+    feed1Time = feed1Actual ? feed1Actual.time : feed1ProjectedBase;
     feed1Allowed = feed1Time <= (wake + firstWW.max);
   } else {
-    feed1Time = feed1Actual ? feed1Actual.time : wake;
+    feed1Time = feed1Actual ? feed1Actual.time : wake + 5;
   }
 
   if(feed1Allowed){
