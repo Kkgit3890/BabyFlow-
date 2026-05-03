@@ -227,11 +227,13 @@ details.advanced[open]{background:#fff}
 
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
+<option value="Diaper change">Diaper change</option>
+<option value="Digest">Digest</option>
 <option value="Nightcap">Nightcap</option>
 <option value="Playtime">Playtime</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
-<option value="Sunshine">Sunshine</option><option value="Digest">Digest</option><option value="Diaper change">Diaper change</option>
+<option value="Sunshine">Sunshine</option>
 <option value="Sunshine and stretches">Sunshine and stretches</option>
 <option value="Swing">Swing</option>
 <option value="Tummy time">Tummy time</option>
@@ -241,7 +243,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v118';
+const STORAGE_KEY='babyflow_pwa_v119';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -705,8 +707,8 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    const activityClass = a.title === 'Nightcap' ? 'activity-feed-green' : (a.title === 'Wind-down' ? 'activity-blue' : 'activity-blue');
-    const activityType = a.title === 'Nightcap' ? 'feed' : (a.title === 'Wind-down' ? 'nap' : 'routine');
+    const activityClass = (a.title === 'Nightcap' || a.title === 'Digest') ? 'activity-feed-green' : 'activity-blue';
+    const activityType = (a.title === 'Nightcap' || a.title === 'Digest') ? 'feed' : 'routine';
     renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
   });
 
