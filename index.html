@@ -231,7 +231,7 @@ details.advanced[open]{background:#fff}
 <option value="Playtime">Playtime</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
-<option value="Sunshine">Sunshine</option>
+<option value="Sunshine">Sunshine</option><option value="Digest">Digest</option><option value="Diaper change">Diaper change</option>
 <option value="Sunshine and stretches">Sunshine and stretches</option>
 <option value="Swing">Swing</option>
 <option value="Tummy time">Tummy time</option>
@@ -241,7 +241,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v117';
+const STORAGE_KEY='babyflow_pwa_v118';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -888,7 +888,13 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    flattenedEvents.push({title:a.title, start:a.time, end:a.time, type:'routine'});
+    flattenedEvents.push({
+      title:a.title,
+      start:a.time,
+      end:a.time,
+      type:'routine',
+      customClass: a.title==='Digest' ? 'feed-green' : (a.title==='Diaper change' ? 'activity-blue' : undefined)
+    });
   });
 
   let bedtimeCursor = bedtimeStart;
