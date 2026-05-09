@@ -147,6 +147,42 @@ details.advanced[open]{background:#fff}
 .compact-field .unit-input input{width:100%}
 .hint.unit-hidden{display:none}
 
+
+.restore-btn{
+  opacity:.85;
+}
+
+.range-convert{
+  color:#94a3b8;
+  font-size:13px;
+  white-space:nowrap;
+}
+.range-field{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.range-input{
+  position:relative;
+  width:160px;
+  flex:0 0 160px;
+}
+.range-input input{
+  width:100%;
+  padding-right:48px;
+}
+.range-input::after{
+  content:"mins";
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#94a3b8;
+  font-size:14px;
+  font-weight:500;
+  pointer-events:none;
+}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -187,31 +223,31 @@ details.advanced[open]{background:#fff}
 <div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
 <div class="grid">
-<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('dreamFeedTime'); return false;">Skip</button></div></div>
+<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('dreamFeedTime'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('dreamFeedTime'); return false;">Restore</button></div></div>
 </div>
 
 <div class="quad">
-<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('longNapFeedRange'); return false;">Skip</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
+<div class="field"><label>Long nap feed interval exception</label><div class="compact-field"><input id="longNapFeedRange" value="210"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('longNapFeedRange'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('longNapFeedRange'); return false;">Restore</button></div><div class="hint" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps"><option value="4" selected>Up to 4 naps</option><option value="5">Up to 5 naps</option></select></div>
-<div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
-<div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
+<div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('bathLength'); return false;">Restore</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
+<div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('routineLengthBath'); return false;">Restore</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
-</div>
-
-<div class="grid">
-<div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
+<div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('routineLengthNoBath'); return false;">Restore</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
 </div>
 
 <div class="grid">
-<div class="field"><label>Full feed length </label><div class="compact-field"><span class="unit-input"><input id="fullFeedLength" type="number" value="20"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="fullFeedLengthHint"></div></div>
+<div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('bedTopOffLength'); return false;">Restore</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
+</div>
+
+<div class="grid">
+<div class="field"><label>Full feed length </label><div class="compact-field"><span class="unit-input"><input id="fullFeedLength" type="number" value="20"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('fullFeedLength'); return false;">Restore</button></div><div class="hint unit-hidden" id="fullFeedLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Digest length </label><div class="compact-field"><span class="unit-input"><input id="digestLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="digestLengthHint"></div></div>
+<div class="field"><label>Digest length </label><div class="compact-field"><span class="unit-input"><input id="digestLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('digestLength'); return false;">Restore</button></div><div class="hint unit-hidden" id="digestLengthHint"></div></div>
 </div>
 <div class="grid">
-<div class="field"><label>Wind-down length </label><div class="compact-field"><span class="unit-input"><input id="windDownLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button></div><div class="hint unit-hidden" id="windDownLengthHint"></div></div>
+<div class="field"><label>Wind-down length </label><div class="compact-field"><span class="unit-input"><input id="windDownLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" onclick="restoreField('windDownLength'); return false;">Restore</button></div><div class="hint unit-hidden" id="windDownLengthHint"></div></div>
 </div>
 </details>
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
@@ -243,7 +279,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v119';
+const STORAGE_KEY='babyflow_pwa_v121';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -262,11 +298,36 @@ function skipField(id){
   const el=$(id);
   if(!el) return false;
   el.value='';
-  try{ updateHints(); }catch(e){ console.error(e); }
+  try{ updateHints(); updateRangeConversions(); }catch(e){ console.error(e); }
   try{ saveState(); }catch(e){ console.error(e); }
   try{ generateTimeline(); }catch(e){ console.error(e); }
   return false;
 }
+
+const DEFAULT_ADVANCED_VALUES = {
+  dreamFeedTime: '',
+  longNapFeedRange: '210',
+  bathLength: '10',
+  routineLengthBath: '10',
+  routineLengthNoBath: '15',
+  bedTopOffLength: '5',
+  fullFeedLength: '20',
+  digestLength: '10',
+  windDownLength: '5'
+};
+
+function restoreField(id){
+  const el=$(id);
+  if(!el) return false;
+  if(Object.prototype.hasOwnProperty.call(DEFAULT_ADVANCED_VALUES, id)){
+    el.value = DEFAULT_ADVANCED_VALUES[id];
+  }
+  try{ updateHints(); updateRangeConversions(); }catch(e){ console.error(e); }
+  try{ saveState(); }catch(e){ console.error(e); }
+  try{ generateTimeline(); }catch(e){ console.error(e); }
+  return false;
+}
+
 const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) return null; if(t.includes('-')){let p=t.split('-').filter(Boolean).map(Number); if(p.length!==2||p.some(isNaN)) return null; let [a,b]=p; if(a>b)[a,b]=[b,a]; return {min:a,max:b};} let v=Number(t); return isNaN(v)?null:{min:v,max:v};};
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
@@ -341,9 +402,9 @@ function updateHints(){
   });
   updateConditionalFields();
 }
-function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); }
+function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); updateRangeConversions(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='4'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); updateRangeConversions(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll();  $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
   $('selectedDate').value = localDateStr();
@@ -521,7 +582,7 @@ function renderTimeControl(ev){
 
 
 function generateTimeline(){
-  updateHints();
+  updateHints(); updateRangeConversions();
   const useDreamFeed=!!$('dreamFeedTime').value;
   const trackFeedDurations = !!$('fullFeedLength').value;
   const includeDigest = !!$('digestLength').value;
@@ -935,7 +996,7 @@ function restoreBabyFlowOnOpen(){
       $('selectedDate').value = localDateStr();
     }
     loadStoredActuals();
-    updateHints();
+    updateHints(); updateRangeConversions();
     if($('wakeTime') && $('wakeTime').value){
       generateTimeline();
     }
@@ -964,12 +1025,53 @@ if(typeof generateTimeline === 'function' && !window.__babyFlowGenerateWrapped){
   };
 }
 
+
+function minutesToPretty(mins){
+  mins = parseInt(mins,10);
+  if(isNaN(mins)) return '';
+  const h = Math.floor(mins/60);
+  const m = mins%60;
+  if(h && m) return `${h} hr${h!==1?'s':''} ${m} min${m!==1?'s':''}`;
+  if(h) return `${h} hr${h!==1?'s':''}`;
+  return `${m} min${m!==1?'s':''}`;
+}
+
+function rangeToPretty(v){
+  if(!v) return '';
+  const s = String(v).trim();
+  if(s.includes('-')){
+    const parts = s.split('-').map(x=>x.trim());
+    if(parts.length===2){
+      return `${minutesToPretty(parts[0])} – ${minutesToPretty(parts[1])}`;
+    }
+  }
+  return minutesToPretty(s);
+}
+
+function updateRangeConversions(){
+  const pairs = [
+    ['firstWWRange','firstWWRangeConverted'],
+    ['laterWWRange','laterWWRangeConverted'],
+    ['firstNapRange','firstNapRangeConverted'],
+    ['regularNapRange','regularNapRangeConverted'],
+    ['longNapRange','longNapRangeConverted'],
+    ['feedRange','feedRangeConverted'],
+    ['longNapFeedRange','longNapFeedRangeConverted']
+  ];
+  pairs.forEach(([inputId,outId])=>{
+    const inp=$(inputId), out=$(outId);
+    if(inp && out){
+      out.textContent = rangeToPretty(inp.value);
+    }
+  });
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
-  restoreBabyFlowOnOpen();
+  restoreBabyFlowOnOpen(); updateRangeConversions();
 
   ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength'].forEach(id=>{
-    if($(id)) $(id).addEventListener('change',()=>{ saveState(); updateHints(); });
-    if($(id)) $(id).addEventListener('input',()=>{ saveState(); updateHints(); });
+    if($(id)) $(id).addEventListener('change',()=>{ saveState(); updateHints(); updateRangeConversions(); });
+    if($(id)) $(id).addEventListener('input',()=>{ saveState(); updateHints(); updateRangeConversions(); });
   });
 
   if($('selectedDate')) $('selectedDate').addEventListener('change',()=>{ saveState(); loadStoredActuals(); generateTimeline(); });
