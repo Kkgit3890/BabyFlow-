@@ -315,7 +315,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v123';
+const STORAGE_KEY='babyflow_pwa_v124';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -769,14 +769,16 @@ function generateTimeline(){
     const bedtimeTopLen = !!$('bedTopOffLength').value ? parseInt($('bedTopOffLength').value||'5',10) : 0;
     const totalTail = NIGHT_CAP_MINUTES + bathLen + routineLen + bedtimeTopLen;
 
-    let nightCapStart = nightCapActual ? nightCapActual.time : Math.max(nap5End + laterWW.min, lastFullFeedStart + fullFeedMinutes);
-    nightCapStart = Math.min(nightCapStart, nap5End + laterWW.max - totalTail);
-    nightCapStart = Math.max(nightCapStart, nap5End);
+    // Night Cap should happen immediately after the cat nap ends.
+    let nightCapStart = nightCapActual ? nightCapActual.time : nap5End;
 
     events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, start:nightCapStart, end:nightCapStart + NIGHT_CAP_MINUTES, feedDuration:NIGHT_CAP_MINUTES, displayTime:trackFeedDurations ? `${ts(nightCapStart)} – ${ts(nightCapStart + NIGHT_CAP_MINUTES)}` : ts(nightCapStart), note: trackFeedDurations ? `${pretty(nightCapStart-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = nightCapStart;
     lastFeedLabel = 'Night Cap';
-    bedtimeStart = nightCapStart + NIGHT_CAP_MINUTES;
+
+    // Bedtime flow cannot overlap Night Cap or Digest.
+    const nightCapEndWithDigest = nightCapStart + NIGHT_CAP_MINUTES + (includeDigest ? digestLength : 0);
+    bedtimeStart = nightCapEndWithDigest;
   } else {
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
