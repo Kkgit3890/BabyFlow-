@@ -315,7 +315,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v122';
+const STORAGE_KEY='babyflow_pwa_v123';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -627,8 +627,8 @@ function generateTimeline(){
   const windDownLength = parseInt(($('windDownLength')?.value)||'5',10);
   const fullFeedMinutes = parseInt(($('fullFeedLength')?.value)||String(DEFAULT_FULL_FEED_MINUTES),10);
   const feedBlockMinutes = fullFeedMinutes + (includeDigest ? digestLength : 0);
-  const napPrepMinutes = includeWindDown ? windDownLength : 0;
-  const feedToNapClearance = feedBlockMinutes + napPrepMinutes;
+  const napPrepMinutes = 0;
+  const feedToNapClearance = feedBlockMinutes;
   const dream=tm($('dreamFeedTime').value), wake=tm($('wakeTime').value), firstWW=rng($('firstWWRange').value), laterWW=rng($('laterWWRange').value), firstNapR=rng($('firstNapRange').value), regNapR=rng($('regularNapRange').value), longNapR=rng($('longNapRange').value), feedR=rng($('feedRange').value), longNapFeedR=rng($('longNapFeedRange').value);
   if(([wake,firstWW,laterWW,firstNapR,regNapR,longNapR,feedR].some(v=>v==null)) || (useDreamFeed && dream==null)){ $('timeline').innerHTML='Please enter your wake time and make sure all template fields are filled in correctly.'; return; }
 
@@ -788,12 +788,31 @@ function generateTimeline(){
     bedtimeStart = Math.min(bedtimeStart, nap4.end + laterWW.max - totalTail);
   }
 
+  function canShowWindDownForNap(ev){
+    if(!includeWindDown || !ev || ev.type !== 'nap') return false;
+    const napStart = ev.start ?? ev.time;
+    const windDownStart = napStart - windDownLength;
+
+    // Wind-down should never force the nap later or overlap feed/digest time.
+    const prevFeed = events
+      .filter(x => x.type === 'feed' && !deletedEventKeys.includes(x.key) && (x.time ?? x.start) <= napStart)
+      .slice(-1)[0];
+
+    if(prevFeed){
+      const feedBaseEnd = prevFeed.end != null ? prevFeed.end : (prevFeed.time ?? prevFeed.start);
+      const feedBlockEnd = feedBaseEnd + ((includeDigest && prevFeed.key !== 'dream-feed') ? digestLength : 0);
+      if(windDownStart < feedBlockEnd) return false;
+    }
+
+    return windDownStart < napStart;
+  }
+
   const renderItems = [];
   events.forEach(ev=>{
     if(deletedEventKeys.includes(ev.key)) return;
     if(!ev.groupKey) ev.groupKey = ev.key;
     if(!ev.groupLabel) ev.groupLabel = ev.title;
-    if(includeWindDown && ev.type==='nap' && !deletedEventKeys.includes(`winddown-${ev.key}`)){
+    if(canShowWindDownForNap(ev) && !deletedEventKeys.includes(`winddown-${ev.key}`)){
       const windDownStart = (ev.start ?? ev.time) - windDownLength;
       renderItems.push({t:windDownStart, html:'', ev:{key:`winddown-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'nap', customClass:'nap-purple', title:'Wind-down', customClass:'activity-blue', time:windDownStart, start:windDownStart, end:(ev.start ?? ev.time), displayTime:`${ts(windDownStart)} – ${ts(ev.start ?? ev.time)}`, note:'', chipType:'suggested'}});
     }
@@ -972,7 +991,7 @@ function generateTimeline(){
   events.forEach(ev => {
     if(deletedEventKeys.includes(ev.key)) return;
     if(ev.type==='nap'){
-      if(includeWindDown){
+      if(canShowWindDownForNap(ev)){
         flattenedEvents.push({title:'Wind-down', customClass:'activity-blue', start:ev.start - windDownLength, end:ev.start, type:'nap'});
       }
       flattenedEvents.push({title:ev.title, start:ev.start, end:ev.end, type:'nap'});
