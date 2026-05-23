@@ -297,7 +297,7 @@ details.advanced[open]{background:#fff}
 <div class="summary-card"><div class="hint">Goodnight</div><div id="goodnightCard"></div></div>
 </div></div>
 
-<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
+<div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="event.stopPropagation(); toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" onclick="event.stopPropagation()" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
 <option value="Cuddles">Cuddles</option>
 <option value="Diaper change">Diaper change</option>
@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v131';
+const STORAGE_KEY='babyflow_pwa_v132';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -467,7 +467,7 @@ function shiftDate(days){
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 
 function closeOpenEditPanelsOnOutsideTap(event){
-  const openPanels = Array.from(document.querySelectorAll('.edit-panel:not(.hidden)'));
+  const openPanels = Array.from(document.querySelectorAll('.edit-panel:not(.hidden)')).filter(panel => panel.id !== 'activityPanel');
   if(!openPanels.length) return;
   const clickedInsidePanel = openPanels.some(panel => panel.contains(event.target));
   const clickedTimeButton = event.target.closest && event.target.closest('.time-btn, .status-dot');
