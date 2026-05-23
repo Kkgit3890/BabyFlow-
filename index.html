@@ -315,11 +315,11 @@ details.advanced[open]{background:#fff}
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
 <option value="Wind-down">Wind-down</option>
-</select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button><button class="secondary small-btn" onclick="toggleActivityPanel()">Close</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
+</select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v130';
+const STORAGE_KEY='babyflow_pwa_v131';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -466,14 +466,16 @@ function shiftDate(days){
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 
-function handleOverlayClick(event,key){
-  const panel = document.getElementById(`panel-${key}`);
-  if(!panel) return;
-  const content = panel.querySelector('.timeline-edit-card');
-  if(content && !content.contains(event.target)){
-    panel.classList.add('hidden');
+function closeOpenEditPanelsOnOutsideTap(event){
+  const openPanels = Array.from(document.querySelectorAll('.edit-panel:not(.hidden)'));
+  if(!openPanels.length) return;
+  const clickedInsidePanel = openPanels.some(panel => panel.contains(event.target));
+  const clickedTimeButton = event.target.closest && event.target.closest('.time-btn, .status-dot');
+  if(!clickedInsidePanel && !clickedTimeButton){
+    openPanels.forEach(panel => panel.classList.add('hidden'));
   }
 }
+document.addEventListener('click', closeOpenEditPanelsOnOutsideTap);
 
 
 
@@ -709,9 +711,7 @@ function renderTimeControl(ev){
           <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
-          
           <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
-          
         </div>
       </div>`;
     } else {
@@ -722,9 +722,7 @@ function renderTimeControl(ev){
           <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
-          
           <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
-          
         </div>
       </div>`;
     }
