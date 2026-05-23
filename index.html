@@ -315,10 +315,11 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v126';
+const STORAGE_KEY='babyflow_pwa_v127';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
+let projectedOverrides = {};
 let deletedEventKeys = [];
 const uiState = { collapsePast:false };
 let recalcFromKey = null;
@@ -383,6 +384,7 @@ function loadStoredActuals(){
   const day = days[getSelectedDateStr()] || {};
   Object.keys(actuals).forEach(k=>delete actuals[k]);
   Object.assign(actuals, day.actuals || {});
+  projectedOverrides = day.projectedOverrides || {};
   dayActivities = Array.isArray(day.activities) ? day.activities : [];
   deletedEventKeys = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys : [];
   try{ const rawUI=localStorage.getItem(STORAGE_KEY+'_ui'); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
@@ -393,6 +395,7 @@ function saveActuals(){
   days[key] = days[key] || {};
   days[key].actuals = JSON.parse(JSON.stringify(actuals));
   days[key].activities = JSON.parse(JSON.stringify(dayActivities));
+  days[key].projectedOverrides = JSON.parse(JSON.stringify(projectedOverrides));
   days[key].deletedEventKeys = JSON.parse(JSON.stringify(deletedEventKeys));
   saveDaysStore(days);
   localStorage.setItem(STORAGE_KEY+'_ui', JSON.stringify(uiState));
@@ -400,12 +403,14 @@ function saveActuals(){
 function clearActuals(){
   Object.keys(actuals).forEach(k=>delete actuals[k]);
   dayActivities = [];
+  projectedOverrides = {};
   deletedEventKeys = [];
   const days = getDaysStore();
   const key = getSelectedDateStr();
   if(days[key]){
     days[key].actuals = {};
     days[key].activities = [];
+    days[key].projectedOverrides = {};
     days[key].deletedEventKeys = [];
     saveDaysStore(days);
   }
@@ -458,20 +463,19 @@ function shiftDate(days){
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 
 function saveEventProjected(key,type){
-  const existing = actuals[key] || {};
-  const isRange = ['nap','feed'].includes(type) || key.startsWith('nap-') || key.startsWith('feed-') || key.includes('dream') || key.includes('digest') || key.includes('winddown');
-  if(isRange){
+  projectedOverrides = projectedOverrides || {};
+  const hasStart = !!$(`edit-${key}-start`);
+  const hasEnd = !!$(`edit-${key}-end`);
+  if(hasStart && hasEnd){
     const s = tm($(`edit-${key}-start`).value);
     const e = tm($(`edit-${key}-end`).value);
     if(s==null || e==null) return;
-    existing.projectedStart = s;
-    existing.projectedEnd = e;
+    projectedOverrides[key] = {start:s,end:e};
   } else {
     const t = tm($(`edit-${key}-time`).value);
     if(t==null) return;
-    existing.projectedTime = t;
+    projectedOverrides[key] = {time:t};
   }
-  actuals[key] = existing;
   saveActuals();
   generateTimeline();
 }
@@ -493,11 +497,8 @@ function saveEventActual(key,type){
 }
 
 function clearEventProjected(key){
-  if(actuals[key]){
-    delete actuals[key].projectedTime;
-    delete actuals[key].projectedStart;
-    delete actuals[key].projectedEnd;
-    if(Object.keys(actuals[key]).length===0) delete actuals[key];
+  if(projectedOverrides && projectedOverrides[key]){
+    delete projectedOverrides[key];
     saveActuals();
     generateTimeline();
   }
@@ -583,6 +584,32 @@ function quickToggleActual(key){
 }
 
 
+
+function applyProjectedOverride(ev){
+  if(!ev || !projectedOverrides) return ev;
+  const p = projectedOverrides[ev.key];
+  if(!p) return ev;
+
+  if(p.time!=null){
+    const dur = ev.end!=null && ev.start!=null ? ev.end - ev.start : (ev.feedDuration || 0);
+    ev.time = p.time;
+    ev.start = p.time;
+    if(dur) ev.end = p.time + dur;
+    ev.displayTime = ev.end!=null ? `${ts(ev.start)} – ${ts(ev.end)}` : ts(ev.time);
+  }
+
+  if(p.start!=null){
+    ev.start = p.start;
+    ev.time = p.start;
+    ev.end = p.end!=null ? p.end : ev.end;
+    ev.displayTime = `${ts(ev.start)} – ${ts(ev.end)}`;
+    ev.durationText = pretty(ev.end - ev.start);
+  }
+
+  ev.chipType = 'suggested';
+  return ev;
+}
+
 function renderTimeControl(ev){
   const hasActual=!!actuals[ev.key];
   const actual = actuals[ev.key];
@@ -594,8 +621,8 @@ function renderTimeControl(ev){
   let panel='';
   if(editableTypes.has(ev.type) || (ev.key && String(ev.key).startsWith('activity-'))){
     if(isRangeEvent){
-      const s=hasActual && actual.start!=null ? actual.start : ((actual && actual.projectedStart!=null) ? actual.projectedStart : (ev.start!=null ? ev.start : ev.time));
-      const e=hasActual && actual.end!=null ? actual.end : ((actual && actual.projectedEnd!=null) ? actual.projectedEnd : (ev.end!=null ? ev.end : ev.time));
+      const s=hasActual && actual.start!=null ? actual.start : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].start!=null) ? projectedOverrides[ev.key].start : (ev.start!=null ? ev.start : ev.time));
+      const e=hasActual && actual.end!=null ? actual.end : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null) ? projectedOverrides[ev.key].end : (ev.end!=null ? ev.end : ev.time));
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
         <div class="inline-grid">
           <div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div>
@@ -611,7 +638,7 @@ function renderTimeControl(ev){
         </div>
       </div>`;
     } else {
-      const t=hasActual && actual.time!=null ? actual.time : ((actual && actual.projectedTime!=null) ? actual.projectedTime : ev.time);
+      const t=hasActual && actual.time!=null ? actual.time : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].time!=null) ? projectedOverrides[ev.key].time : ev.time);
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
         <div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div>
         <div class="row">
@@ -681,10 +708,10 @@ function generateTimeline(){
 
   if(useDreamFeed){
     const feed1ProjectedBase = wake + 5;
-    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : ((feed1Actual && feed1Actual.projectedTime!=null) ? feed1Actual.projectedTime : feed1ProjectedBase);
+    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : feed1ProjectedBase;
     feed1Allowed = feed1Time <= (wake + firstWW.max);
   } else {
-    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : ((feed1Actual && feed1Actual.projectedTime!=null) ? feed1Actual.projectedTime : wake + 5);
+    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : wake + 5;
   }
 
   if(feed1Allowed){
@@ -706,13 +733,13 @@ function generateTimeline(){
   }
 
   const nap1Actual = actuals['nap-1'];
-  let nap1Start = (nap1Actual && nap1Actual.start!=null) ? nap1Actual.start : ((nap1Actual && nap1Actual.projectedStart!=null) ? nap1Actual.projectedStart : Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance));
-  let nap1End = (nap1Actual && nap1Actual.end!=null) ? nap1Actual.end : ((nap1Actual && nap1Actual.projectedEnd!=null) ? nap1Actual.projectedEnd : nap1Start + firstNapC);
+  let nap1Start = (nap1Actual && nap1Actual.start!=null) ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance);
+  let nap1End = (nap1Actual && nap1Actual.end!=null) ? nap1Actual.end : nap1Start + firstNapC;
   events.push({key:'nap-1', type:'nap', customClass:'nap-purple', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:`After ${pretty(nap1Start - wake)} WW`, chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
   function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
-    const t = (actual && actual.time!=null) ? actual.time : ((actual && actual.projectedTime!=null) ? actual.projectedTime : Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes));
+    const t = (actual && actual.time!=null) ? actual.time : Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes);
     events.push({key, type:'feed', title, time:t, start:t, end:t + fullFeedMinutes, feedDuration:fullFeedMinutes, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(t + fullFeedMinutes)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = t;
     lastFullFeedStart = t;
@@ -722,8 +749,8 @@ function generateTimeline(){
 
   function pushNap(key,title,prevNapEnd,ww,duration){
     const actual = actuals[key];
-    let s = (actual && actual.start!=null) ? actual.start : ((actual && actual.projectedStart!=null) ? actual.projectedStart : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance));
-    let e = (actual && actual.end!=null) ? actual.end : ((actual && actual.projectedEnd!=null) ? actual.projectedEnd : s + duration);
+    let s = (actual && actual.start!=null) ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance);
+    let e = (actual && actual.end!=null) ? actual.end : s + duration;
     const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
     events.push({key, type:'nap', customClass:'nap-purple', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `After ${pretty(s-prevNap.end)} WW` : '', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
@@ -736,8 +763,8 @@ function generateTimeline(){
   let feed3Time = pushFeed('feed-3','Feed 3',feedR.min,nap2.end);
 
   const nap3Actual = actuals['nap-3'];
-  let nap3Start = (nap3Actual && nap3Actual.start!=null) ? nap3Actual.start : ((nap3Actual && nap3Actual.projectedStart!=null) ? nap3Actual.projectedStart : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance));
-  let nap3End = (nap3Actual && nap3Actual.end!=null) ? nap3Actual.end : ((nap3Actual && nap3Actual.projectedEnd!=null) ? nap3Actual.projectedEnd : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start)));
+  let nap3Start = (nap3Actual && nap3Actual.start!=null) ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance);
+  let nap3End = (nap3Actual && nap3Actual.end!=null) ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
   const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
   events.push({key:'nap-3', type:'nap', customClass:'nap-purple', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `After ${pretty(nap3Start-prevNapForNap3.end)} WW` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
@@ -788,9 +815,9 @@ function generateTimeline(){
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
     const nap5Actual = actuals['nap-5'];
-    let nap5Start = (nap5Actual && nap5Actual.start!=null) ? nap5Actual.start : ((nap5Actual && nap5Actual.projectedStart!=null) ? nap5Actual.projectedStart : Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance));
+    let nap5Start = (nap5Actual && nap5Actual.start!=null) ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
-    let nap5End = (nap5Actual && nap5Actual.end!=null) ? nap5Actual.end : ((nap5Actual && nap5Actual.projectedEnd!=null) ? nap5Actual.projectedEnd : nap5Start + 45);
+    let nap5End = (nap5Actual && nap5Actual.end!=null) ? nap5Actual.end : nap5Start + 45;
     const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
     events.push({key:'nap-5', type:'nap', customClass:'nap-purple', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `After ${pretty(nap5Start-prevNapForNap5.end)} WW` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
@@ -801,7 +828,7 @@ function generateTimeline(){
     const totalTail = NIGHT_CAP_MINUTES + bathLen + routineLen + bedtimeTopLen;
 
     // Night Cap should happen immediately after the cat nap ends.
-    let nightCapStart = (nightCapActual && nightCapActual.time!=null) ? nightCapActual.time : ((nightCapActual && nightCapActual.projectedTime!=null) ? nightCapActual.projectedTime : nap5End);
+    let nightCapStart = (nightCapActual && nightCapActual.time!=null) ? nightCapActual.time : nap5End;
 
     events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, start:nightCapStart, end:nightCapStart + NIGHT_CAP_MINUTES, feedDuration:NIGHT_CAP_MINUTES, displayTime:trackFeedDurations ? `${ts(nightCapStart)} – ${ts(nightCapStart + NIGHT_CAP_MINUTES)}` : ts(nightCapStart), note: trackFeedDurations ? `${pretty(nightCapStart-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = nightCapStart;
@@ -839,6 +866,8 @@ function generateTimeline(){
 
     return windDownStart < napStart;
   }
+
+  events.forEach(ev=>applyProjectedOverride(ev));
 
   const renderItems = [];
   events.forEach(ev=>{
