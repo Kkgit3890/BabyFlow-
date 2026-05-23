@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v128';
+const STORAGE_KEY='babyflow_pwa_v130';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -466,6 +466,24 @@ function shiftDate(days){
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 
+function handleOverlayClick(event,key){
+  const panel = document.getElementById(`panel-${key}`);
+  if(!panel) return;
+  const content = panel.querySelector('.timeline-edit-card');
+  if(content && !content.contains(event.target)){
+    panel.classList.add('hidden');
+  }
+}
+
+
+
+
+function isOptionalEndEventKey(key){
+  return String(key).startsWith('activity-') || ['bath','bedtime-routine','bedtime-topoff'].includes(String(key));
+}
+function getProjectedForKey(key){
+  return projectedOverrides && projectedOverrides[key] ? projectedOverrides[key] : {};
+}
 
 function updateDayActivityTime(key, start, end){
   const a = dayActivities.find(x=>x.id===key);
@@ -488,6 +506,16 @@ function saveEventProjected(key,type){
     const e = endEl && endEl.value ? tm(endEl.value) : null;
     if(s==null) return;
     updateDayActivityTime(key, s, e);
+    return;
+  }
+  if(['bath','bedtime-routine','bedtime-topoff'].includes(String(key))){
+    const s = tm($(`edit-${key}-start`).value);
+    const endEl = $(`edit-${key}-end`);
+    const e = endEl && endEl.value ? tm(endEl.value) : null;
+    if(s==null) return;
+    projectedOverrides[key] = e!=null ? {start:s,end:e} : {time:s};
+    saveActuals();
+    generateTimeline();
     return;
   }
   if(hasStart && hasEnd){
@@ -513,6 +541,16 @@ function saveEventActual(key,type){
     const e = endEl && endEl.value ? tm(endEl.value) : null;
     if(s==null) return;
     updateDayActivityTime(key, s, e);
+    actuals[key] = e!=null ? {type,start:s,end:e,time:s} : {type,time:s};
+    saveActuals();
+    generateTimeline();
+    return;
+  }
+  if(['bath','bedtime-routine','bedtime-topoff'].includes(String(key))){
+    const s = tm($(`edit-${key}-start`).value);
+    const endEl = $(`edit-${key}-end`);
+    const e = endEl && endEl.value ? tm(endEl.value) : null;
+    if(s==null) return;
     actuals[key] = e!=null ? {type,start:s,end:e,time:s} : {type,time:s};
     saveActuals();
     generateTimeline();
@@ -661,19 +699,19 @@ function renderTimeControl(ev){
   if(editableTypes.has(ev.type) || (ev.key && String(ev.key).startsWith('activity-'))){
     if(isRangeEvent){
       const s=hasActual && actual.start!=null ? actual.start : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].start!=null) ? projectedOverrides[ev.key].start : (ev.start!=null ? ev.start : ev.time));
-      const e=(ev.optionalEnd && !hasActual && !(projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null)) ? null : (hasActual && actual.end!=null ? actual.end : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null) ? projectedOverrides[ev.key].end : (ev.end!=null ? ev.end : ev.time)));
+      const e=(ev.optionalEnd && !(hasActual && actual.end!=null) && !(projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null)) ? null : (hasActual && actual.end!=null ? actual.end : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null) ? projectedOverrides[ev.key].end : (ev.end!=null ? ev.end : ev.time)));
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
         <div class="inline-grid">
           <div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div>
           <div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${e==null?'':toInputTime(e)}"></div>
         </div>
         <div class="row">
-          <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="clearEventProjected('${ev.key}')">Clear projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
+          <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
-          <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          
           <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
-          <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
+          
         </div>
       </div>`;
     } else {
@@ -681,12 +719,12 @@ function renderTimeControl(ev){
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
         <div><label>Time</label><input id="edit-${ev.key}-time" type="time" value="${toInputTime(t)}"></div>
         <div class="row">
-          <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="clearEventProjected('${ev.key}')">Clear projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
+          <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
           <button class="secondary small-btn" onclick="setEventNow('${ev.key}','${ev.type}')">Log now</button>
           <button class="secondary small-btn" onclick="recalculateFrom('${ev.key}')">Recalculate from here</button>
-          <button class="secondary small-btn" onclick="clearEventActual('${ev.key}')">Clear actual</button>
+          
           <button class="secondary small-btn" onclick="deleteTimelineEvent('${ev.key}')">Delete</button>
-          <button class="secondary small-btn" onclick="togglePanel('${ev.key}')">Close</button>
+          
         </div>
       </div>`;
     }
@@ -938,22 +976,31 @@ function generateTimeline(){
   let tailStart = bedtimeStart;
 
   if(bathSelected && !deletedEventKeys.includes('bath')){
-    const bathActual = actuals['bath'];
-    const bathStart = bathActual ? bathActual.time : tailStart;
-    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, displayTime:ts(bathStart), note:'', chipType:'routine'}});
-    tailStart = bathStart + bathLen;
+    const bathActual = actuals['bath'] || {};
+    const bathProj = getProjectedForKey('bath');
+    const bathStart = bathActual.start ?? bathActual.time ?? bathProj.start ?? bathProj.time ?? tailStart;
+    const bathEnd = bathActual.end ?? bathProj.end ?? null;
+    const bathDisplay = bathEnd!=null ? `${ts(bathStart)} – ${ts(bathEnd)}` : ts(bathStart);
+    renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, start:bathStart, end:bathEnd, displayTime:bathDisplay, note:'', chipType:'routine', optionalEnd:true}});
+    tailStart = bathEnd!=null ? bathEnd : bathStart + bathLen;
   }
 
-  const routineActual = actuals['bedtime-routine'];
-  const routineStart = routineActual ? routineActual.time : tailStart;
-  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, displayTime:ts(routineStart), note:'', chipType:'routine'}});
-  tailStart = routineStart + routineLen;
+  const routineActual = actuals['bedtime-routine'] || {};
+  const routineProj = getProjectedForKey('bedtime-routine');
+  const routineStart = routineActual.start ?? routineActual.time ?? routineProj.start ?? routineProj.time ?? tailStart;
+  const routineEnd = routineActual.end ?? routineProj.end ?? null;
+  const routineDisplay = routineEnd!=null ? `${ts(routineStart)} – ${ts(routineEnd)}` : ts(routineStart);
+  if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, start:routineStart, end:routineEnd, displayTime:routineDisplay, note:'', chipType:'routine', optionalEnd:true}});
+  tailStart = routineEnd!=null ? routineEnd : routineStart + routineLen;
 
   if(!!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
-    const topActual = actuals['bedtime-topoff'];
-    const topStart = topActual ? topActual.time : tailStart;
-    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, displayTime:ts(topStart), note:'', chipType:'routine'}});
-    tailStart = topStart + parseInt($('bedTopOffLength').value||'5',10);
+    const topActual = actuals['bedtime-topoff'] || {};
+    const topProj = getProjectedForKey('bedtime-topoff');
+    const topStart = topActual.start ?? topActual.time ?? topProj.start ?? topProj.time ?? tailStart;
+    const topEnd = topActual.end ?? topProj.end ?? null;
+    const topDisplay = topEnd!=null ? `${ts(topStart)} – ${ts(topEnd)}` : ts(topStart);
+    renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, start:topStart, end:topEnd, displayTime:topDisplay, note:'', chipType:'routine', optionalEnd:true}});
+    tailStart = topEnd!=null ? topEnd : topStart + parseInt($('bedTopOffLength').value||'5',10);
   }
 
   const goodnightActual = actuals['goodnight'];
