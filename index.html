@@ -299,14 +299,18 @@ details.advanced[open]{background:#fff}
 
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
+<option value="Cuddles">Cuddles</option>
 <option value="Diaper change">Diaper change</option>
 <option value="Digest">Digest</option>
+<option value="Get dressed for the day">Get dressed for the day</option>
 <option value="Nightcap">Nightcap</option>
+<option value="Outfit change">Outfit change</option>
 <option value="Playtime">Playtime</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
 <option value="Sunshine">Sunshine</option>
 <option value="Sunshine and stretches">Sunshine and stretches</option>
+<option value="Swaddle and soothe">Swaddle and soothe</option>
 <option value="Swing">Swing</option>
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
@@ -315,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v127';
+const STORAGE_KEY='babyflow_pwa_v128';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -462,10 +466,30 @@ function shiftDate(days){
 
 function togglePanel(key){ const el=document.getElementById(`panel-${key}`); if(el) el.classList.toggle('hidden'); }
 
+
+function updateDayActivityTime(key, start, end){
+  const a = dayActivities.find(x=>x.id===key);
+  if(!a) return false;
+  a.time = start;
+  a.start = start;
+  a.end = end!=null ? end : null;
+  saveActuals();
+  generateTimeline();
+  return true;
+}
+
 function saveEventProjected(key,type){
   projectedOverrides = projectedOverrides || {};
   const hasStart = !!$(`edit-${key}-start`);
   const hasEnd = !!$(`edit-${key}-end`);
+  if(String(key).startsWith('activity-')){
+    const s = tm($(`edit-${key}-start`).value);
+    const endEl = $(`edit-${key}-end`);
+    const e = endEl && endEl.value ? tm(endEl.value) : null;
+    if(s==null) return;
+    updateDayActivityTime(key, s, e);
+    return;
+  }
   if(hasStart && hasEnd){
     const s = tm($(`edit-${key}-start`).value);
     const e = tm($(`edit-${key}-end`).value);
@@ -483,6 +507,17 @@ function saveEventProjected(key,type){
 function saveEventActual(key,type){
   const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
   const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  if(String(key).startsWith('activity-')){
+    const s = tm($(`edit-${key}-start`).value);
+    const endEl = $(`edit-${key}-end`);
+    const e = endEl && endEl.value ? tm(endEl.value) : null;
+    if(s==null) return;
+    updateDayActivityTime(key, s, e);
+    actuals[key] = e!=null ? {type,start:s,end:e,time:s} : {type,time:s};
+    saveActuals();
+    generateTimeline();
+    return;
+  }
   if(isRangeEvent){
     const s=tm($(`edit-${key}-start`).value), e=tm($(`edit-${key}-end`).value);
     if(s==null||e==null) return;
@@ -542,7 +577,7 @@ function addActivity(){
   const title = $('activityType').value;
   const time = tm($('activityTime').value);
   if(!title || time==null) return;
-  dayActivities.push({id:`activity-${Date.now()}-${Math.floor(Math.random()*1000)}`, title, time});
+  dayActivities.push({id:`activity-${Date.now()}-${Math.floor(Math.random()*1000)}`, title, time, start:time, end:null});
   saveActuals();
   generateTimeline();
 }
@@ -571,7 +606,11 @@ function quickToggleActual(key){
     return;
   }
   const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
-  if(isRangeEvent){
+  if(String(key).startsWith('activity-')){
+    const s = ev.start!=null ? ev.start : ev.time;
+    if(ev.end!=null) actuals[key] = {type:ev.type, start:s, end:ev.end, time:s};
+    else actuals[key] = {type:ev.type, time:s};
+  } else if(isRangeEvent){
     const s = ev.start!=null ? ev.start : ev.time;
     const e = ev.end!=null ? ev.end : ev.time;
     actuals[key] = {type:ev.type, start:s, end:e, time:s};
@@ -622,11 +661,11 @@ function renderTimeControl(ev){
   if(editableTypes.has(ev.type) || (ev.key && String(ev.key).startsWith('activity-'))){
     if(isRangeEvent){
       const s=hasActual && actual.start!=null ? actual.start : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].start!=null) ? projectedOverrides[ev.key].start : (ev.start!=null ? ev.start : ev.time));
-      const e=hasActual && actual.end!=null ? actual.end : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null) ? projectedOverrides[ev.key].end : (ev.end!=null ? ev.end : ev.time));
+      const e=(ev.optionalEnd && !hasActual && !(projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null)) ? null : (hasActual && actual.end!=null ? actual.end : ((projectedOverrides && projectedOverrides[ev.key] && projectedOverrides[ev.key].end!=null) ? projectedOverrides[ev.key].end : (ev.end!=null ? ev.end : ev.time)));
       panel = `<div class="edit-panel hidden" id="panel-${ev.key}">
         <div class="inline-grid">
           <div><label>Start</label><input id="edit-${ev.key}-start" type="time" value="${toInputTime(s)}"></div>
-          <div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${toInputTime(e)}"></div>
+          <div><label>End</label><input id="edit-${ev.key}-end" type="time" value="${e==null?'':toInputTime(e)}"></div>
         </div>
         <div class="row">
           <button class="secondary small-btn" onclick="saveEventProjected('${ev.key}','${ev.type}')">Save projected</button><button class="secondary small-btn" onclick="clearEventProjected('${ev.key}')">Clear projected</button><button class="secondary small-btn" onclick="saveEventActual('${ev.key}','${ev.type}')">Save actual</button>
@@ -887,7 +926,10 @@ function generateTimeline(){
   dayActivities.forEach(a=>{
     const activityClass = (a.title === 'Nightcap' || a.title === 'Digest') ? 'activity-feed-green' : 'activity-blue';
     const activityType = (a.title === 'Nightcap' || a.title === 'Digest') ? 'feed' : 'routine';
-    renderItems.push({t:a.time, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:a.time, displayTime:ts(a.time), note:'', chipType:'suggested'}});
+    const aStart = a.start!=null ? a.start : a.time;
+    const aEnd = a.end!=null ? a.end : null;
+    const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
+    renderItems.push({t:aStart, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:aStart, start:aStart, end:aEnd, displayTime:display, note:'', chipType:'suggested', optionalEnd:true}});
   });
 
   const bathSelected = !!$('bathLength').value;
@@ -1070,8 +1112,8 @@ function generateTimeline(){
   dayActivities.forEach(a=>{
     flattenedEvents.push({
       title:a.title,
-      start:a.time,
-      end:a.time,
+      start:a.start!=null ? a.start : a.time,
+      end:a.end!=null ? a.end : (a.start!=null ? a.start : a.time),
       type:'routine',
       customClass: a.title==='Digest' ? 'feed-green' : (a.title==='Diaper change' ? 'activity-blue' : undefined)
     });
