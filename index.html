@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v132';
+const STORAGE_KEY='babyflow_pwa_v133';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -536,7 +536,10 @@ function saveEventProjected(key,type){
 
 function saveEventActual(key,type){
   const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
-  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  const isRangeEvent = !!(ev && (
+  (ev.end!=null) ||
+  ((ev.start!=null) && !ev.optionalEnd)
+));
   if(String(key).startsWith('activity-')){
     const s = tm($(`edit-${key}-start`).value);
     const endEl = $(`edit-${key}-end`);
@@ -582,7 +585,10 @@ function clearEventActual(key){ delete actuals[key]; saveActuals(); generateTime
 function setEventNow(key, type){
   const t = nowMinutes();
   const ev = window.__timelineEventMap ? window.__timelineEventMap[key] : null;
-  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  const isRangeEvent = !!(ev && (
+  (ev.end!=null) ||
+  ((ev.start!=null) && !ev.optionalEnd)
+));
   if(isRangeEvent){
     const duration = ev && ev.end!=null && (ev.start!=null || ev.time!=null) ? Math.max(0, ev.end - (ev.start!=null ? ev.start : ev.time)) : 0;
     actuals[key] = {type, start:t, end:t + duration, time:t};
@@ -645,7 +651,10 @@ function quickToggleActual(key){
     generateTimeline();
     return;
   }
-  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  const isRangeEvent = !!(ev && (
+  (ev.end!=null) ||
+  ((ev.start!=null) && !ev.optionalEnd)
+));
   if(String(key).startsWith('activity-')){
     const s = ev.start!=null ? ev.start : ev.time;
     if(ev.end!=null) actuals[key] = {type:ev.type, start:s, end:ev.end, time:s};
@@ -692,7 +701,10 @@ function applyProjectedOverride(ev){
 function renderTimeControl(ev){
   const hasActual=!!actuals[ev.key];
   const actual = actuals[ev.key];
-  const isRangeEvent = !!(ev && (ev.end!=null || ev.start!=null));
+  const isRangeEvent = !!(ev && (
+  (ev.end!=null) ||
+  ((ev.start!=null) && !ev.optionalEnd)
+));
   const shown = hasActual
     ? (isRangeEvent ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(actual.time))
     : ev.displayTime;
