@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v136';
+const STORAGE_KEY='babyflow_pwa_v137';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -833,9 +833,9 @@ function generateTimeline(){
       title:'Feed 1',
       time:feed1Time,
       start:feed1Time,
-      end:feed1Time + fullFeedMinutes,
-      feedDuration:fullFeedMinutes,
-      displayTime:trackFeedDurations ? `${ts(feed1Time)} – ${ts(feed1Time + fullFeedMinutes)}` : ts(feed1Time),
+      end: projectedEndFor('feed-1', feed1Time + fullFeedMinutes),
+      feedDuration: projectedEndFor('feed-1', feed1Time + fullFeedMinutes) - feed1Time,
+      displayTime:trackFeedDurations ? `${ts(feed1Time)} – ${ts(projectedEndFor('feed-1', feed1Time + fullFeedMinutes))}` : ts(feed1Time),
       note: useDreamFeed ? `${pretty(feed1Time-lastFeed)} since Dream feed` : '',
       chipType:'suggested'
     });
@@ -851,8 +851,10 @@ function generateTimeline(){
 
   function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
+    const p = projectedFor(key);
     const t = (actual && actual.time!=null) ? actual.time : projectedTimeFor(key, Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes));
-    events.push({key, type:'feed', title, time:t, start:t, end:t + fullFeedMinutes, feedDuration:fullFeedMinutes, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(t + fullFeedMinutes)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
+    const feedEnd = (actual && actual.end!=null) ? actual.end : (p.end!=null ? p.end : t + fullFeedMinutes);
+    events.push({key, type:'feed', title, time:t, start:t, end:feedEnd, feedDuration:feedEnd-t, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(feedEnd)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = t;
     lastFullFeedStart = t;
     lastFeedLabel = title;
@@ -882,7 +884,7 @@ function generateTimeline(){
 
   const activeLongRange = (!!$('longNapFeedRange').value && longNapFeedR) ? longNapFeedR : feedR;
 
-  if(!actuals['feed-3']){
+  if(!actuals['feed-3'] && !(projectedOverrides && projectedOverrides['feed-3'])){
     const feed3Event = events.find(ev => ev.key === 'feed-3');
     const feed2Event = events.find(ev => ev.key === 'feed-2');
     const latestAllowedFeed3 = nap3End - activeLongRange.max;
@@ -905,7 +907,7 @@ function generateTimeline(){
     }
   }
 
-  if(!($('longNapFeedRange')?.value) && !actuals['nap-3']){
+  if(!($('longNapFeedRange')?.value) && !actuals['nap-3'] && !(projectedOverrides && projectedOverrides['nap-3'])){
     const nap3Event = events.find(ev => ev.key === 'nap-3');
     const latestAllowedNap3End = lastFeed + feedR.max;
     if(nap3Event && latestAllowedNap3End < nap3End){
