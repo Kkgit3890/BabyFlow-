@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v134';
+const STORAGE_KEY='babyflow_pwa_v135';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -591,7 +591,9 @@ function setEventNow(key, type){
   ev.end!=null ||
   ev.start!=null
 ));
-  if(isRangeEvent){
+  if(ev && ev.optionalEnd && ev.end==null){
+    actuals[key] = {type, time:t};
+  } else if(isRangeEvent){
     const duration = ev && ev.end!=null && (ev.start!=null || ev.time!=null) ? Math.max(0, ev.end - (ev.start!=null ? ev.start : ev.time)) : 0;
     actuals[key] = {type, start:t, end:t + duration, time:t};
   } else {
@@ -702,15 +704,17 @@ function applyProjectedOverride(ev){
 }
 
 function renderTimeControl(ev){
-  const hasActual=!!actuals[ev.key];
   const actual = actuals[ev.key];
+  const hasActual=!!(actual && (actual.time!=null || actual.start!=null || actual.end!=null));
   const isRangeEvent = !!(ev && (
   ev.optionalEnd ||
   ev.end!=null ||
   ev.start!=null
 ));
+  const hasActualRange = hasActual && actual.start!=null && actual.end!=null;
+  const hasActualSingle = hasActual && actual.time!=null;
   const shown = hasActual
-    ? (isRangeEvent ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(actual.time))
+    ? (hasActualRange ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(hasActualSingle ? actual.time : actual.start))
     : ev.displayTime;
 
   let panel='';
