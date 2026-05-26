@@ -319,7 +319,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v135';
+const STORAGE_KEY='babyflow_pwa_v136';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -678,6 +678,23 @@ function quickToggleActual(key){
 
 
 
+
+function projectedFor(key){ return (projectedOverrides && projectedOverrides[key]) ? projectedOverrides[key] : {}; }
+function projectedTimeFor(key, fallback){
+  const p = projectedFor(key);
+  if(p.time!=null) return p.time;
+  if(p.start!=null) return p.start;
+  return fallback;
+}
+function projectedStartFor(key, fallback){
+  const p = projectedFor(key);
+  return p.start!=null ? p.start : (p.time!=null ? p.time : fallback);
+}
+function projectedEndFor(key, fallback){
+  const p = projectedFor(key);
+  return p.end!=null ? p.end : fallback;
+}
+
 function applyProjectedOverride(ev){
   if(!ev || !projectedOverrides) return ev;
   const p = projectedOverrides[ev.key];
@@ -803,10 +820,10 @@ function generateTimeline(){
 
   if(useDreamFeed){
     const feed1ProjectedBase = wake + 5;
-    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : feed1ProjectedBase;
+    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : projectedTimeFor('feed-1', feed1ProjectedBase);
     feed1Allowed = feed1Time <= (wake + firstWW.max);
   } else {
-    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : wake + 5;
+    feed1Time = (feed1Actual && feed1Actual.time!=null) ? feed1Actual.time : projectedTimeFor('feed-1', wake + 5);
   }
 
   if(feed1Allowed){
@@ -828,13 +845,13 @@ function generateTimeline(){
   }
 
   const nap1Actual = actuals['nap-1'];
-  let nap1Start = (nap1Actual && nap1Actual.start!=null) ? nap1Actual.start : Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance);
-  let nap1End = (nap1Actual && nap1Actual.end!=null) ? nap1Actual.end : nap1Start + firstNapC;
+  let nap1Start = (nap1Actual && nap1Actual.start!=null) ? nap1Actual.start : projectedStartFor('nap-1', Math.max(wake+firstWWc, lastFullFeedStart+feedToNapClearance));
+  let nap1End = (nap1Actual && nap1Actual.end!=null) ? nap1Actual.end : projectedEndFor('nap-1', nap1Start + firstNapC);
   events.push({key:'nap-1', type:'nap', customClass:'nap-purple', title:'Nap 1', start:nap1Start, end:nap1End, displayTime:`${ts(nap1Start)} – ${ts(nap1End)}`, note:`After ${pretty(nap1Start - wake)} WW`, chipType:'suggested', durationText:pretty(nap1End-nap1Start)});
 
   function pushFeed(key,title,minGap,napEnd){
     const actual = actuals[key];
-    const t = (actual && actual.time!=null) ? actual.time : Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes);
+    const t = (actual && actual.time!=null) ? actual.time : projectedTimeFor(key, Math.max(lastFeed + minGap, napEnd, lastFullFeedStart + fullFeedMinutes));
     events.push({key, type:'feed', title, time:t, start:t, end:t + fullFeedMinutes, feedDuration:fullFeedMinutes, displayTime:trackFeedDurations ? `${ts(t)} – ${ts(t + fullFeedMinutes)}` : ts(t), note: trackFeedDurations ? `${pretty(t-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = t;
     lastFullFeedStart = t;
@@ -844,8 +861,8 @@ function generateTimeline(){
 
   function pushNap(key,title,prevNapEnd,ww,duration){
     const actual = actuals[key];
-    let s = (actual && actual.start!=null) ? actual.start : Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance);
-    let e = (actual && actual.end!=null) ? actual.end : s + duration;
+    let s = (actual && actual.start!=null) ? actual.start : projectedStartFor(key, Math.max(prevNapEnd+ww, lastFullFeedStart+feedToNapClearance));
+    let e = (actual && actual.end!=null) ? actual.end : projectedEndFor(key, s + duration);
     const prevNap = events.filter(ev => ev.type==='nap').slice(-1)[0];
     events.push({key, type:'nap', customClass:'nap-purple', title, start:s, end:e, displayTime:`${ts(s)} – ${ts(e)}`, note: prevNap ? `After ${pretty(s-prevNap.end)} WW` : '', chipType:'suggested', durationText:pretty(e-s)});
     return {start:s,end:e};
@@ -858,8 +875,8 @@ function generateTimeline(){
   let feed3Time = pushFeed('feed-3','Feed 3',feedR.min,nap2.end);
 
   const nap3Actual = actuals['nap-3'];
-  let nap3Start = (nap3Actual && nap3Actual.start!=null) ? nap3Actual.start : Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance);
-  let nap3End = (nap3Actual && nap3Actual.end!=null) ? nap3Actual.end : nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start));
+  let nap3Start = (nap3Actual && nap3Actual.start!=null) ? nap3Actual.start : projectedStartFor('nap-3', Math.max(Math.max(nap2.end+laterWW.min, Math.min(14*60, nap2.end+laterWW.max)), lastFullFeedStart+feedToNapClearance));
+  let nap3End = (nap3Actual && nap3Actual.end!=null) ? nap3Actual.end : projectedEndFor('nap-3', nap3Start + Math.max(longNapR.min, Math.min(longNapR.max, 17*60-nap3Start)));
   const prevNapForNap3 = events.filter(ev => ev.type==='nap').slice(-1)[0];
   events.push({key:'nap-3', type:'nap', customClass:'nap-purple', title:'Nap 3 / long afternoon nap', start:nap3Start, end:nap3End, displayTime:`${ts(nap3Start)} – ${ts(nap3End)}`, note: prevNapForNap3 ? `After ${pretty(nap3Start-prevNapForNap3.end)} WW` : '', chipType:'suggested', durationText:pretty(nap3End-nap3Start)});
 
@@ -910,9 +927,9 @@ function generateTimeline(){
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
     const nap5Actual = actuals['nap-5'];
-    let nap5Start = (nap5Actual && nap5Actual.start!=null) ? nap5Actual.start : Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance);
+    let nap5Start = (nap5Actual && nap5Actual.start!=null) ? nap5Actual.start : projectedStartFor('nap-5', Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance));
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
-    let nap5End = (nap5Actual && nap5Actual.end!=null) ? nap5Actual.end : nap5Start + 45;
+    let nap5End = (nap5Actual && nap5Actual.end!=null) ? nap5Actual.end : projectedEndFor('nap-5', nap5Start + 45);
     const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
     events.push({key:'nap-5', type:'nap', customClass:'nap-purple', title:'Nap 5 / cat nap', start:nap5Start, end:nap5End, displayTime:`${ts(nap5Start)} – ${ts(nap5End)}`, note: prevNapForNap5 ? `After ${pretty(nap5Start-prevNapForNap5.end)} WW` : '', chipType:'suggested', durationText:pretty(nap5End-nap5Start)});
 
@@ -923,7 +940,7 @@ function generateTimeline(){
     const totalTail = NIGHT_CAP_MINUTES + bathLen + routineLen + bedtimeTopLen;
 
     // Night Cap should happen immediately after the cat nap ends.
-    let nightCapStart = (nightCapActual && nightCapActual.time!=null) ? nightCapActual.time : nap5End;
+    let nightCapStart = (nightCapActual && nightCapActual.time!=null) ? nightCapActual.time : projectedTimeFor('night-cap', nap5End);
 
     events.push({key:'night-cap', type:'feed', title:'Night Cap', time:nightCapStart, start:nightCapStart, end:nightCapStart + NIGHT_CAP_MINUTES, feedDuration:NIGHT_CAP_MINUTES, displayTime:trackFeedDurations ? `${ts(nightCapStart)} – ${ts(nightCapStart + NIGHT_CAP_MINUTES)}` : ts(nightCapStart), note: trackFeedDurations ? `${pretty(nightCapStart-lastFeed)} since ${lastFeedLabel}` : '', chipType:'suggested'});
     lastFeed = nightCapStart;
@@ -962,7 +979,7 @@ function generateTimeline(){
     return windDownStart < napStart;
   }
 
-  events.forEach(ev=>applyProjectedOverride(ev));
+  events.forEach(ev=>{ if(!['feed','nap'].includes(ev.type)) applyProjectedOverride(ev); });
 
   const renderItems = [];
   events.forEach(ev=>{
