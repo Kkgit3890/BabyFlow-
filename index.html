@@ -302,6 +302,7 @@ details.advanced[open]{background:#fff}
 <option value="Cuddles">Cuddles</option>
 <option value="Diaper change">Diaper change</option>
 <option value="Digest">Digest</option>
+<option value="Feed">Feed</option>
 <option value="Get dressed for the day">Get dressed for the day</option>
 <option value="Nightcap">Nightcap</option>
 <option value="Outfit change">Outfit change</option>
@@ -319,7 +320,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v137';
+const STORAGE_KEY='babyflow_pwa_v138';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -999,12 +1000,12 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    const activityClass = (a.title === 'Nightcap' || a.title === 'Digest') ? 'activity-feed-green' : 'activity-blue';
-    const activityType = (a.title === 'Nightcap' || a.title === 'Digest') ? 'feed' : 'routine';
+    const activityClass = (a.title === 'Nightcap' || a.title === 'Digest' || a.title === 'Feed') ? 'activity-feed-green' : 'activity-blue';
+    const activityType = (a.title === 'Nightcap' || a.title === 'Digest' || a.title === 'Feed') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
     const aEnd = a.end!=null ? a.end : null;
     const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
-    renderItems.push({t:aStart, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:aStart, start:aStart, end:aEnd, displayTime:display, note:'', chipType:'suggested', optionalEnd:true}});
+    renderItems.push({t:aStart, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:aStart, start:aStart, end:aEnd, displayTime:display, note:'', chipType:'suggested', optionalEnd:true, manualFeed:(a.title==='Feed')}});
   });
 
   const bathSelected = !!$('bathLength').value;
@@ -1060,6 +1061,7 @@ function generateTimeline(){
     }
   });
 
+  renumberTimelineFeeds(renderItems);
   renderItems.sort((a,b)=>a.t-b.t);
   const visibleItems = [];
   let collapsedCount = 0;
@@ -1074,7 +1076,30 @@ function generateTimeline(){
   const grouped = [];
   const wakeEvents = new Set(['good-morning','feed-1','feed-2','feed-3','feed-4','feed-5','night-cap']);
   const napEvents = new Set(['nap-1','nap-2','nap-3','nap-4','nap-5']);
-  function getHeaderForItem(ev){
+  
+function renumberTimelineFeeds(renderItems){
+  let feedNum = 1;
+  renderItems
+    .filter(item => item.ev)
+    .sort((a,b)=>(a.t??0)-(b.t??0))
+    .forEach(item => {
+      const ev = item.ev;
+      if(!ev) return;
+      const isNumberedFeed =
+        ev.type === 'feed' &&
+        ev.title !== 'Dream feed' &&
+        ev.title !== 'Night Cap' &&
+        ev.title !== 'Nightcap' &&
+        ev.title !== 'Digest' &&
+        !String(ev.key || '').startsWith('digest-');
+      if(isNumberedFeed){
+        ev.title = `Feed ${feedNum}`;
+        feedNum += 1;
+      }
+    });
+}
+
+function getHeaderForItem(ev){
     const key = ev?.key || '';
     const useNap5 = $('maxNaps')?.value === '5';
     let baseKey;
@@ -1199,7 +1224,7 @@ function generateTimeline(){
       start:a.start!=null ? a.start : a.time,
       end:a.end!=null ? a.end : (a.start!=null ? a.start : a.time),
       type:'routine',
-      customClass: a.title==='Digest' ? 'feed-green' : (a.title==='Diaper change' ? 'activity-blue' : undefined)
+      customClass: (a.title==='Digest' || a.title==='Feed') ? 'feed-green' : (a.title==='Diaper change' ? 'activity-blue' : undefined)
     });
   });
 
