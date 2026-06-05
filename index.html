@@ -320,7 +320,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v138';
+const STORAGE_KEY='babyflow_pwa_v139';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1078,25 +1078,49 @@ function generateTimeline(){
   const napEvents = new Set(['nap-1','nap-2','nap-3','nap-4','nap-5']);
   
 function renumberTimelineFeeds(renderItems){
-  let feedNum = 1;
-  renderItems
+  const feedItems = renderItems
     .filter(item => item.ev)
-    .sort((a,b)=>(a.t??0)-(b.t??0))
-    .forEach(item => {
+    .filter(item => {
       const ev = item.ev;
-      if(!ev) return;
-      const isNumberedFeed =
-        ev.type === 'feed' &&
-        ev.title !== 'Dream feed' &&
-        ev.title !== 'Night Cap' &&
-        ev.title !== 'Nightcap' &&
-        ev.title !== 'Digest' &&
-        !String(ev.key || '').startsWith('digest-');
-      if(isNumberedFeed){
-        ev.title = `Feed ${feedNum}`;
-        feedNum += 1;
+      if(!ev || ev.type !== 'feed') return false;
+      const title = String(ev.title || '');
+      const key = String(ev.key || '');
+      return title !== 'Dream feed' &&
+        title !== 'Night Cap' &&
+        title !== 'Nightcap' &&
+        title !== 'Digest' &&
+        !key.startsWith('digest-');
+    })
+    .sort((a,b)=>(a.t??0)-(b.t??0));
+
+  let previousFeed = null;
+  feedItems.forEach((item, index) => {
+    const ev = item.ev;
+    const start = ev.time ?? ev.start ?? item.t;
+    ev.title = `Feed ${index + 1}`;
+
+    // Keep built-in / manual feed display aligned with the event's actual start/end.
+    if(ev.end!=null && ev.end !== start){
+      ev.displayTime = `${ts(start)} – ${ts(ev.end)}`;
+    } else {
+      ev.displayTime = ts(start);
+    }
+
+    if(previousFeed){
+      const prevStart = previousFeed.time ?? previousFeed.start;
+      ev.note = `${pretty(start - prevStart)} since ${previousFeed.title}`;
+    } else {
+      const dream = renderItems
+        .map(x=>x.ev)
+        .find(x=>x && x.key === 'dream-feed');
+      if(dream){
+        const dreamStart = dream.time ?? dream.start;
+        ev.note = `${pretty(start - dreamStart)} since Dream feed`;
       }
-    });
+    }
+
+    previousFeed = ev;
+  });
 }
 
 function getHeaderForItem(ev){
