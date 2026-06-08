@@ -320,7 +320,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v139';
+const STORAGE_KEY='babyflow_pwa_v140';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1046,6 +1046,9 @@ function generateTimeline(){
   if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:(()=>{const lastNap=events.filter(ev=>ev.type==='nap').slice(-1)[0]; return lastNap ? `After ${pretty(goodnightTime-lastNap.end)} WW` : ''})(), chipType:'routine'}});
   tailStart = goodnightTime;
 
+  // Renumber feeds before rendering each card so titles/notes show correctly.
+  renumberTimelineFeeds(renderItems);
+
   const current = nowMinutes();
   window.__timelineEventMap = {};
   window.__orderedTimelineKeys = [];
@@ -1061,7 +1064,6 @@ function generateTimeline(){
     }
   });
 
-  renumberTimelineFeeds(renderItems);
   renderItems.sort((a,b)=>a.t-b.t);
   const visibleItems = [];
   let collapsedCount = 0;
