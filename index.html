@@ -331,7 +331,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v143';
+const STORAGE_KEY='babyflow_pwa_v144';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -518,6 +518,24 @@ function saveEventProjected(key,type){
   projectedOverrides = projectedOverrides || {};
   const hasStart = !!$(`edit-${key}-start`);
   const hasEnd = !!$(`edit-${key}-end`);
+
+  // Wind-down is generated from the related nap start.
+  // Saving projected Wind-down should therefore shift the nap start/end too.
+  if(String(key).startsWith('winddown-')){
+    const napKey = String(key).replace('winddown-','');
+    const s = tm($(`edit-${key}-start`).value);
+    const e = tm($(`edit-${key}-end`).value);
+    if(s==null || e==null) return;
+    const napEv = window.__timelineEventMap ? window.__timelineEventMap[napKey] : null;
+    const currentNapStart = napEv ? (napEv.start ?? napEv.time) : e;
+    const currentNapEnd = napEv && napEv.end!=null ? napEv.end : currentNapStart;
+    const napDuration = Math.max(0, currentNapEnd - currentNapStart);
+    projectedOverrides[napKey] = {start:e, end:e + napDuration};
+    saveActuals();
+    generateTimeline();
+    return;
+  }
+
   if(String(key).startsWith('activity-')){
     const s = tm($(`edit-${key}-start`).value);
     const endEl = $(`edit-${key}-end`);
@@ -557,6 +575,19 @@ function saveEventActual(key,type){
   ev.end!=null ||
   ev.start!=null
 ));
+  if(String(key).startsWith('winddown-')){
+    const napKey = String(key).replace('winddown-','');
+    const e = tm($(`edit-${key}-end`).value);
+    if(e==null) return;
+    const napEv = window.__timelineEventMap ? window.__timelineEventMap[napKey] : null;
+    const currentNapStart = napEv ? (napEv.start ?? napEv.time) : e;
+    const currentNapEnd = napEv && napEv.end!=null ? napEv.end : currentNapStart;
+    const napDuration = Math.max(0, currentNapEnd - currentNapStart);
+    actuals[napKey] = {type:'nap', start:e, end:e + napDuration, time:e};
+    saveActuals();
+    generateTimeline();
+    return;
+  }
   if(String(key).startsWith('activity-')){
     const s = tm($(`edit-${key}-start`).value);
     const endEl = $(`edit-${key}-end`);
