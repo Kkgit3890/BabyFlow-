@@ -327,7 +327,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v141';
+const STORAGE_KEY='babyflow_pwa_v142';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1048,8 +1048,9 @@ function generateTimeline(){
     tailStart = topEnd!=null ? topEnd : topStart + parseInt($('bedTopOffLength').value||'5',10);
   }
 
-  const goodnightActual = actuals['goodnight'];
-  const goodnightTime = goodnightActual ? goodnightActual.time : tailStart;
+  const goodnightActual = actuals['goodnight'] || {};
+  const goodnightProj = getProjectedForKey('goodnight');
+  const goodnightTime = goodnightActual.time ?? goodnightProj.time ?? goodnightProj.start ?? tailStart;
   if(!deletedEventKeys.includes('goodnight')) renderItems.push({t:goodnightTime, html:'', ev:{key:'goodnight', type:'routine', title:'Goodnight 💤🌙', time:goodnightTime, displayTime:ts(goodnightTime), note:(()=>{const lastNap=events.filter(ev=>ev.type==='nap').slice(-1)[0]; return lastNap ? `After ${pretty(goodnightTime-lastNap.end)} WW` : ''})(), chipType:'routine'}});
   tailStart = goodnightTime;
 
