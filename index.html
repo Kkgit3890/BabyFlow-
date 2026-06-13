@@ -220,6 +220,31 @@ details.advanced[open]{background:#fff}
   min-width:68px;
 }
 
+
+/* v147 final overrides */
+.status-dot{
+  width:24px !important;
+  height:24px !important;
+  border-radius:50% !important;
+  border:2px solid #94a3b8 !important;
+  background:#fff;
+  display:inline-block;
+  position:absolute;
+  right:-30px !important;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+  box-sizing:border-box;
+  z-index:3;
+}
+.status-dot.actual{
+  background:#22c55e !important;
+  border-color:#16a34a !important;
+}
+.item-right{
+  padding-right:18px;
+}
+
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -332,7 +357,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v146';
+const STORAGE_KEY='babyflow_pwa_v147';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1349,12 +1374,17 @@ function getHeaderForItem(ev){
   let rightNow = flattenedEvents.find(ev => ev.end > ev.start ? (currentMin >= ev.start && currentMin < ev.end) : currentMin === ev.start);
   const nextUp = flattenedEvents.find(ev => ev.start > currentMin) || null;
 
-  // If a nap has ended and the next item has not started yet, show Awake instead of keeping the old nap as Right Now.
   if(!rightNow){
-    const lastStarted = flattenedEvents.filter(ev => ev.start <= currentMin).slice(-1)[0] || null;
-    rightNow = lastStarted && lastStarted.type === 'nap' && lastStarted.end <= currentMin
-      ? {title:'Awake'}
-      : lastStarted;
+    const lastStarted = flattenedEvents
+      .filter(ev => ev.start <= currentMin)
+      .sort((a,b)=>a.start-b.start)
+      .slice(-1)[0] || null;
+
+    if(lastStarted && lastStarted.type === 'nap' && lastStarted.end <= currentMin){
+      rightNow = {title:'Awake'};
+    } else {
+      rightNow = lastStarted;
+    }
   }
 
   $('rightNowCard').textContent = rightNow ? rightNow.title : '—';
