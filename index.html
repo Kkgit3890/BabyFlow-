@@ -331,7 +331,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v144';
+const STORAGE_KEY='babyflow_pwa_v145';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -523,14 +523,23 @@ function saveEventProjected(key,type){
   // Saving projected Wind-down should therefore shift the nap start/end too.
   if(String(key).startsWith('winddown-')){
     const napKey = String(key).replace('winddown-','');
-    const s = tm($(`edit-${key}-start`).value);
-    const e = tm($(`edit-${key}-end`).value);
-    if(s==null || e==null) return;
+    const windDownEnd = tm($(`edit-${key}-end`).value);
+    if(windDownEnd==null) return;
+
     const napEv = window.__timelineEventMap ? window.__timelineEventMap[napKey] : null;
-    const currentNapStart = napEv ? (napEv.start ?? napEv.time) : e;
-    const currentNapEnd = napEv && napEv.end!=null ? napEv.end : currentNapStart;
+    const existingProjected = projectedOverrides && projectedOverrides[napKey] ? projectedOverrides[napKey] : {};
+
+    const currentNapStart =
+      existingProjected.start ?? existingProjected.time ??
+      (napEv ? (napEv.start ?? napEv.time) : windDownEnd);
+
+    const currentNapEnd =
+      existingProjected.end ??
+      (napEv && napEv.end!=null ? napEv.end : currentNapStart);
+
     const napDuration = Math.max(0, currentNapEnd - currentNapStart);
-    projectedOverrides[napKey] = {start:e, end:e + napDuration};
+
+    projectedOverrides[napKey] = {start:windDownEnd, end:windDownEnd + napDuration};
     saveActuals();
     generateTimeline();
     return;
@@ -577,13 +586,31 @@ function saveEventActual(key,type){
 ));
   if(String(key).startsWith('winddown-')){
     const napKey = String(key).replace('winddown-','');
-    const e = tm($(`edit-${key}-end`).value);
-    if(e==null) return;
+    const windDownEnd = tm($(`edit-${key}-end`).value);
+    if(windDownEnd==null) return;
+
     const napEv = window.__timelineEventMap ? window.__timelineEventMap[napKey] : null;
-    const currentNapStart = napEv ? (napEv.start ?? napEv.time) : e;
-    const currentNapEnd = napEv && napEv.end!=null ? napEv.end : currentNapStart;
+    const existingActual = actuals[napKey] || {};
+    const existingProjected = projectedOverrides && projectedOverrides[napKey] ? projectedOverrides[napKey] : {};
+
+    const currentNapStart =
+      existingActual.start ?? existingActual.time ??
+      existingProjected.start ?? existingProjected.time ??
+      (napEv ? (napEv.start ?? napEv.time) : windDownEnd);
+
+    const currentNapEnd =
+      existingActual.end ??
+      existingProjected.end ??
+      (napEv && napEv.end!=null ? napEv.end : currentNapStart);
+
     const napDuration = Math.max(0, currentNapEnd - currentNapStart);
-    actuals[napKey] = {type:'nap', start:e, end:e + napDuration, time:e};
+
+    actuals[napKey] = {type:'nap', start:windDownEnd, end:windDownEnd + napDuration, time:windDownEnd};
+
+    if(projectedOverrides && projectedOverrides[napKey]){
+      delete projectedOverrides[napKey];
+    }
+
     saveActuals();
     generateTimeline();
     return;
