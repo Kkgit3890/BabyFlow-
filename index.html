@@ -358,7 +358,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v151';
+const STORAGE_KEY='babyflow_pwa_v152';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1106,13 +1106,12 @@ function generateTimeline(){
     if(finalFeedActual && finalFeedActual.time!=null){
       finalFeedStart = finalFeedActual.time;
     } else if(finalWakeFeedType === 'regular'){
-      const latestByFinalWake = nap5End + finalWWLength - (finalFeedMinutes + (includeDigest ? digestLength : 0) + tailDurAfterFinalFeed);
       const earliestByFeedInterval = lastFeed + feedR.min;
       const latestByFeedInterval = lastFeed + feedR.max;
+      // Full Feed must respect the entered feed interval. Do not pull it earlier just to keep the final WW short.
       let candidate = Math.max(nap5End, earliestByFeedInterval);
-      // If the feed interval and final wake window conflict, keep the final wake window from running long.
-      if(candidate > latestByFinalWake) candidate = Math.max(nap5End, latestByFinalWake);
-      finalFeedStart = projectedTimeFor(finalFeedKey, Math.min(candidate, latestByFeedInterval));
+      candidate = Math.min(candidate, latestByFeedInterval);
+      finalFeedStart = projectedTimeFor(finalFeedKey, candidate);
     } else {
       finalFeedStart = projectedTimeFor(finalFeedKey, nap5End);
     }
