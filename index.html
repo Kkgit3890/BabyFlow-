@@ -358,7 +358,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v153';
+const STORAGE_KEY='babyflow_pwa_v154';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1037,6 +1037,7 @@ function generateTimeline(){
 
   const useNap5 = $('maxNaps').value==='5';
   let bedtimeStart;
+  let finalFullFeedDigestEnd = null;
 
   if(useNap5){
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
@@ -1057,7 +1058,7 @@ function generateTimeline(){
     const bathLen = !!$('bathLength').value ? parseInt($('bathLength').value||'10',10) : 0;
     const routineLen = parseInt((!!$('bathLength').value ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
     const bedtimeTopLen = !!$('bedTopOffLength').value ? parseInt($('bedTopOffLength').value||'5',10) : 0;
-    const tailDurAfterFinalFeed = bathLen + routineLen + bedtimeTopLen;
+    const tailDurAfterFinalFeed = bathLen + routineLen + (finalWakeFeedType === 'regular' ? 0 : bedtimeTopLen);
 
     if(finalWakeFeedType === 'regular' && !actuals['nap-4'] && !projectedOverrides['nap-4'] && !actuals['feed-5'] && !projectedOverrides['feed-5'] && !actuals['nap-5'] && !projectedOverrides['nap-5']){
       const nap4Event = events.find(ev=>ev.key==='nap-4');
@@ -1108,8 +1109,9 @@ function generateTimeline(){
     } else if(finalWakeFeedType === 'regular'){
       const earliestByFeedInterval = lastFeed + feedR.min;
       const latestByFeedInterval = lastFeed + feedR.max;
-      // Full Feed must respect the entered feed interval. Do not pull it earlier just to keep the final WW short.
-      let candidate = Math.max(nap5End, earliestByFeedInterval);
+      // In Full Feed mode, bedtime routine happens first, then Feed 6/Digest.
+      const preFeedRoutine = bathLen + routineLen;
+      let candidate = Math.max(nap5End + preFeedRoutine, earliestByFeedInterval);
       candidate = Math.min(candidate, latestByFeedInterval);
       finalFeedStart = projectedTimeFor(finalFeedKey, candidate);
     } else {
@@ -1121,7 +1123,12 @@ function generateTimeline(){
     lastFeed = finalFeedStart;
     lastFeedLabel = finalFeedTitle;
     const finalFeedEndWithDigest = finalFeedEnd + (includeDigest ? digestLength : 0);
-    bedtimeStart = finalFeedEndWithDigest;
+    if(finalWakeFeedType === 'regular'){
+      finalFullFeedDigestEnd = finalFeedEndWithDigest;
+      bedtimeStart = nap5End;
+    } else {
+      bedtimeStart = finalFeedEndWithDigest;
+    }
   } else {
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
@@ -1201,7 +1208,7 @@ function generateTimeline(){
   if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, start:routineStart, end:routineEnd, displayTime:routineDisplay, note:'', chipType:'routine', optionalEnd:true}});
   tailStart = routineEnd!=null ? routineEnd : routineStart + routineLen;
 
-  if(!!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
+  if(!(useNap5 && $('finalWakeFeedType')?.value === 'regular') && !!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
     const topActual = actuals['bedtime-topoff'] || {};
     const topProj = getProjectedForKey('bedtime-topoff');
     const topStart = topActual.start ?? topActual.time ?? topProj.start ?? topProj.time ?? tailStart;
@@ -1210,6 +1217,8 @@ function generateTimeline(){
     renderItems.push({t:topStart, html:'', ev:{key:'bedtime-topoff', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime top-off', time:topStart, start:topStart, end:topEnd, displayTime:topDisplay, note:'', chipType:'routine', optionalEnd:true}});
     tailStart = topEnd!=null ? topEnd : topStart + parseInt($('bedTopOffLength').value||'5',10);
   }
+
+  if(finalFullFeedDigestEnd!=null) tailStart = Math.max(tailStart, finalFullFeedDigestEnd);
 
   const goodnightActual = actuals['goodnight'] || {};
   const goodnightProj = getProjectedForKey('goodnight');
