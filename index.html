@@ -292,7 +292,7 @@ details.advanced[open]{background:#fff}
 <div class="field"><label>Long nap feed interval exception</label><div class="advanced-duration-field"><span class="range-input"><input id="longNapFeedRange" value="210"></span><span class="range-convert" id="longNapFeedRangeConverted"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('longNapFeedRange'); return false;">↶</button></div><div class="hint unit-hidden" id="longNapFeedRangeHint"></div></div>
 <div class="field"><label>Projected naps</label><select id="maxNaps" class="compact-select"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
 <div id="fiveNapSettings" class="grid hidden">
-<div class="field"><label>Cat nap length</label><div class="compact-field"><span class="unit-input"><input id="catNapLength" type="number" value="55"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('catNapLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('catNapLength'); return false;">↶</button></div><div class="hint unit-hidden" id="catNapLengthHint"></div></div>
+<div class="field"><label>Cat nap length</label><div class="compact-field"><span class="unit-input"><input id="catNapLength" type="number" value="60"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('catNapLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('catNapLength'); return false;">↶</button></div><div class="hint unit-hidden" id="catNapLengthHint"></div></div>
 <div class="field"><label>Final Wake Window length</label><div class="compact-field"><span class="unit-input"><input id="finalWWLength" type="number" value="50"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('finalWWLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('finalWWLength'); return false;">↶</button></div><div class="hint unit-hidden" id="finalWWLengthHint"></div></div>
 <div class="field"><label>Final Wake Window feeding</label><select id="finalWakeFeedType" class="compact-select"><option value="nightcap">Night Cap</option><option value="regular" selected>Full Feed</option></select></div>
 </div>
@@ -358,7 +358,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v152';
+const STORAGE_KEY='babyflow_pwa_v153';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -404,7 +404,7 @@ const DEFAULT_ADVANCED_VALUES = {
   fullFeedLength: '20',
   digestLength: '10',
   windDownLength: '5',
-  catNapLength: '55',
+  catNapLength: '60',
   finalWWLength: '50'
 };
 
@@ -907,7 +907,7 @@ function generateTimeline(){
   const includeWindDown = !!$('windDownLength').value;
   const windDownLength = parseInt(($('windDownLength')?.value)||'5',10);
   const fullFeedMinutes = parseInt(($('fullFeedLength')?.value)||String(DEFAULT_FULL_FEED_MINUTES),10);
-  const catNapLength = parseInt(($('catNapLength')?.value)||'55',10);
+  const catNapLength = parseInt(($('catNapLength')?.value)||'60',10);
   const finalWWLength = parseInt(($('finalWWLength')?.value)||'50',10);
   const feedBlockMinutes = fullFeedMinutes + (includeDigest ? digestLength : 0);
   const napPrepMinutes = 0;
@@ -1121,7 +1121,7 @@ function generateTimeline(){
     lastFeed = finalFeedStart;
     lastFeedLabel = finalFeedTitle;
     const finalFeedEndWithDigest = finalFeedEnd + (includeDigest ? digestLength : 0);
-    bedtimeStart = Math.min(Math.max(finalFeedEndWithDigest, nap5End + finalWWLength - tailDurAfterFinalFeed), nap5End + finalWWLength - tailDurAfterFinalFeed);
+    bedtimeStart = finalFeedEndWithDigest;
   } else {
     pushFeed('feed-5','Feed 5',feedR.min,nap4.end);
 
