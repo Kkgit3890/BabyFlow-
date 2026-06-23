@@ -358,7 +358,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v155';
+const STORAGE_KEY='babyflow_pwa_v156';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1045,9 +1045,10 @@ function generateTimeline(){
     const nap5Actual = actuals['nap-5'];
     const finalWakeFeedTypeEarly = $('finalWakeFeedType')?.value || 'regular';
     let nap5StartDefault = finalWakeFeedTypeEarly === 'regular'
-      ? Math.max(nap4.end+laterWW.max, lastFullFeedStart+feedToNapClearance)
+      ? Math.max(nap4.end+laterWWc, lastFullFeedStart+feedToNapClearance)
       : Math.max(nap4.end+laterWW.min, lastFullFeedStart+feedToNapClearance);
     let nap5Start = (nap5Actual && nap5Actual.start!=null) ? nap5Actual.start : projectedStartFor('nap-5', nap5StartDefault);
+    nap5Start = Math.max(nap5Start, nap4.end+laterWW.min);
     nap5Start = Math.min(nap5Start, nap4.end+laterWW.max);
     let nap5End = (nap5Actual && nap5Actual.end!=null) ? nap5Actual.end : projectedEndFor('nap-5', nap5Start + catNapLength);
     const prevNapForNap5 = events.filter(ev => ev.type==='nap').slice(-1)[0];
@@ -1078,8 +1079,9 @@ function generateTimeline(){
         // Feed 5 should follow Nap 4, but still not be earlier than the feed interval allows.
         let adjustedFeed5Start = Math.max(adjustedNap4End, feed4Event ? feed4Event.time + feedR.min : adjustedNap4End);
 
-        // In Full Feed mode, use the longest allowed WW #5 when that helps keep the Final Wake Window within its limit.
-        let adjustedNap5Start = Math.max(adjustedNap4End + laterWW.max, adjustedFeed5Start + fullFeedMinutes);
+        // In Full Feed mode, start with the middle/default WW #5, then clamp inside the allowed range.
+        let adjustedNap5Start = Math.max(adjustedNap4End + laterWWc, adjustedFeed5Start + fullFeedMinutes);
+        adjustedNap5Start = Math.max(adjustedNap5Start, adjustedNap4End + laterWW.min);
         adjustedNap5Start = Math.min(adjustedNap5Start, adjustedNap4End + laterWW.max);
 
         nap4Event.end = adjustedNap4End;
@@ -1222,7 +1224,11 @@ function generateTimeline(){
     tailStart = topEnd!=null ? topEnd : topStart + parseInt($('bedTopOffLength').value||'5',10);
   }
 
-  if(finalFullFeedDigestEnd!=null) tailStart = Math.max(tailStart, finalFullFeedDigestEnd);
+  if(finalFullFeedDigestEnd!=null){
+    const lastNapForFinalWake = events.filter(ev=>ev.type==='nap').slice(-1)[0];
+    const finalWakeTarget = lastNapForFinalWake ? lastNapForFinalWake.end + finalWWLength : tailStart;
+    tailStart = Math.max(tailStart, finalFullFeedDigestEnd, finalWakeTarget);
+  }
 
   const goodnightActual = actuals['goodnight'] || {};
   const goodnightProj = getProjectedForKey('goodnight');
