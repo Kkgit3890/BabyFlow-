@@ -358,7 +358,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v148';
+const STORAGE_KEY='babyflow_pwa_v149';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -474,7 +474,7 @@ function updateConditionalFields(){
   const afterBathWrap = $('routineLengthBathWrap');
   if(afterBathWrap) afterBathWrap.classList.toggle('hidden', !bathSelected);
   const fiveNapSettings = $('fiveNapSettings');
-  if(fiveNapSettings) fiveNapSettings.classList.toggle('hidden', $('maxNaps','finalWakeFeedType')?.value !== '5');
+  if(fiveNapSettings) fiveNapSettings.classList.toggle('hidden', $('maxNaps')?.value !== '5');
 }
 
 function updateHints(){
@@ -492,7 +492,7 @@ function updateHints(){
 }
 function saveState(){ let ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength']; let s={}; ids.forEach(id=>s[id]=$(id).value); localStorage.setItem(STORAGE_KEY,JSON.stringify(s)); saveActuals(); $('saveStatus').textContent='Saved on this device.'; updateHints(); updateRangeConversions(); }
 function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); Object.keys(s).forEach(id=>$(id)&&($(id).value=s[id])); }catch(e){} }
-function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps','finalWakeFeedType').value='4'; if($('finalWakeFeedType')) $('finalWakeFeedType').value='nightcap'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); updateRangeConversions(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
+function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='40-45'; $('laterWWRange').value='55-65'; $('firstNapRange').value='50-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='4'; if($('finalWakeFeedType')) $('finalWakeFeedType').value='nightcap'; $('bathLength').value='10'; $('routineLengthBath').value='10'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); updateRangeConversions(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll();  $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
   $('selectedDate').value = localDateStr();
@@ -1025,7 +1025,7 @@ function generateTimeline(){
 
   const nap4 = pushNap('nap-4','Nap 4',nap3End,laterWWc,regNapC);
 
-  const useNap5 = $('maxNaps','finalWakeFeedType').value==='5';
+  const useNap5 = $('maxNaps').value==='5';
   let bedtimeStart;
 
   if(useNap5){
@@ -1236,7 +1236,7 @@ function renumberTimelineFeeds(renderItems){
 
 function getHeaderForItem(ev){
     const key = ev?.key || '';
-    const useNap5 = $('maxNaps','finalWakeFeedType')?.value === '5';
+    const useNap5 = $('maxNaps')?.value === '5';
     let baseKey;
 
     if(key.startsWith('digest-')) {
@@ -1282,6 +1282,7 @@ function getHeaderForItem(ev){
     // With up to 5 naps selected, Feed 5 remains Wake Window #5 before Nap #5.
     if(baseKey === 'feed-5') return useNap5 ? 'Wake Window #5' : 'Final Wake Window';
     if(baseKey === 'nap-5') return 'Nap #5';
+    if(baseKey === 'final-feed' || baseKey === 'night-cap') return 'Final Wake Window';
     if(baseKey === 'night-cap' || baseKey === 'bath' || baseKey === 'bedtime-routine' || baseKey === 'bedtime-topoff' || baseKey === 'goodnight') return 'Final Wake Window';
 
     return ev?.groupLabel || ev?.title || '';
