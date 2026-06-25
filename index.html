@@ -342,7 +342,7 @@ details.advanced[open]{background:#fff}
   <div class="settings-section-subtitle">Bedtime routine timing.</div>
   <div class="grid">
     <div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bathLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
-    <div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bathLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
+    <div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('routineLengthBath'); return false;">↶</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
     <div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('routineLengthNoBath'); return false;">↶</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
     <div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bedTopOffLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
   </div>
@@ -399,7 +399,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v159';
+const STORAGE_KEY='babyflow_pwa_v160';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -534,7 +534,7 @@ function updateHints(){
     let r=rng($(i).value);
     $(h).textContent=r?(r.min===r.max?pretty(r.min):`${pretty(r.min)} to ${pretty(r.max)}`):'';
   });
-  [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','catNapLength','finalWWLength','windDownLengthHint']].forEach(([i,h])=>{
+  [['bathLength','bathLengthHint'],['routineLengthBath','routineLengthBathHint'],['routineLengthNoBath','routineLengthNoBathHint'],['bedTopOffLength','bedTopOffLengthHint'],['fullFeedLength','fullFeedLengthHint'],['digestLength','digestLengthHint'],['windDownLength','windDownLengthHint'],['catNapLength','catNapLengthHint'],['finalWWLength','finalWWLengthHint']].forEach(([i,h])=>{
     if(!$(i) || !$(h)) return;
     const v=$(i).value;
     $(h).textContent=v?pretty(parseInt(v,10)):'';
