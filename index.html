@@ -245,6 +245,31 @@ details.advanced[open]{background:#fff}
   padding-right:18px;
 }
 
+
+/* v159 settings organization */
+.settings-section{
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px;
+  margin:16px 0;
+  background:#fff;
+}
+.settings-section-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:18px;
+  font-weight:900;
+  margin:0 0 4px;
+  color:#0f172a;
+}
+.settings-section-subtitle{
+  color:var(--muted);
+  font-size:13px;
+  margin:0 0 12px;
+}
+.settings-section .field:last-child{margin-bottom:0}
+
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -258,7 +283,7 @@ details.advanced[open]{background:#fff}
 <body><div class="wrap">
 <div class="card">
 <h2>BabyFlow</h2>
-<div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule template</div>
+<div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule settings</div>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
   <div class="field"><label>Selected day</label><input id="selectedDate" type="date"></div>
@@ -271,52 +296,67 @@ details.advanced[open]{background:#fff}
     </div>
   </div>
 </div>
-<div class="grid">
-<div class="field section-gap"><label>Good morning ☀️ time</label><input id="wakeTime" type="time" min="00:00" max="11:59"></div>
-</div>
-<div class="field section-gap"><label>First wake window</label><div class="template-duration-field"><span class="range-input"><input id="firstWWRange" value="40-45"></span><span class="range-convert" id="firstWWRangeConverted"></span></div><div class="hint unit-hidden" id="firstWWRangeHint"></div></div>
-<div class="field section-gap"><label>Later wake windows</label><div class="template-duration-field"><span class="range-input"><input id="laterWWRange" value="55-65"></span><span class="range-convert" id="laterWWRangeConverted"></span></div><div class="hint unit-hidden" id="laterWWRangeHint"></div></div>
-<div class="field section-gap"><label>First nap</label><div class="template-duration-field"><span class="range-input"><input id="firstNapRange" value="50-75"></span><span class="range-convert" id="firstNapRangeConverted"></span></div><div class="hint unit-hidden" id="firstNapRangeHint"></div></div>
-<div class="field section-gap"><label>Regular naps</label><div class="template-duration-field"><span class="range-input"><input id="regularNapRange" value="90-120"></span><span class="range-convert" id="regularNapRangeConverted"></span></div><div class="hint unit-hidden" id="regularNapRangeHint"></div></div>
-<div class="field section-gap"><label>Long afternoon nap</label><div class="template-duration-field"><span class="range-input"><input id="longNapRange" value="180"></span><span class="range-convert" id="longNapRangeConverted"></span></div><div class="hint unit-hidden" id="longNapRangeHint"></div></div>
-<div class="field section-gap"><label>Feed interval</label><div class="template-duration-field"><span class="range-input"><input id="feedRange" value="140-180"></span><span class="range-convert" id="feedRangeConverted"></span></div><div class="hint unit-hidden" id="feedRangeHint"></div></div>
-<details class="advanced" open>
-<summary>Advanced settings</summary>
-<div class="hint">Less-used settings for dream feeds, long nap exceptions, and bedtime flow.</div>
 
-<div class="grid">
-<div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('dreamFeedTime'); return false;">Skip</button></div></div>
+<div class="settings-section">
+  <div class="settings-section-title">☀️ Day Start</div>
+  <div class="settings-section-subtitle">Starting points for the day.</div>
+  <div class="grid">
+    <div class="field"><label>Dream feed time</label><div class="compact-field"><input id="dreamFeedTime" type="time"><button type="button" class="secondary small-btn skip-btn" onclick="skipField('dreamFeedTime'); return false;">Skip</button></div></div>
+    <div class="field section-gap"><label>Good morning ☀️ time</label><input id="wakeTime" type="time" min="00:00" max="11:59"></div>
+  </div>
 </div>
 
-<div class="quad">
-<div class="field"><label>Long nap feed interval exception</label><div class="advanced-duration-field"><span class="range-input"><input id="longNapFeedRange" value="210"></span><span class="range-convert" id="longNapFeedRangeConverted"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('longNapFeedRange'); return false;">↶</button></div><div class="hint unit-hidden" id="longNapFeedRangeHint"></div></div>
-<div class="field"><label>Projected naps</label><select id="maxNaps" class="compact-select"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
-<div id="fiveNapSettings" class="grid hidden">
-<div class="field"><label>Cat nap length</label><div class="compact-field"><span class="unit-input"><input id="catNapLength" type="number" value="60"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('catNapLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('catNapLength'); return false;">↶</button></div><div class="hint unit-hidden" id="catNapLengthHint"></div></div>
-<div class="field"><label>Final Wake Window length</label><div class="compact-field"><span class="unit-input"><input id="finalWWLength" type="number" value="50"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('finalWWLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('finalWWLength'); return false;">↶</button></div><div class="hint unit-hidden" id="finalWWLengthHint"></div></div>
-<div class="field"><label>Final Wake Window feeding</label><select id="finalWakeFeedType" class="compact-select"><option value="nightcap">Night Cap</option><option value="regular" selected>Full Feed</option></select></div>
-</div>
-<div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bathLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
-<div id="routineLengthBathWrap" class="field"><label>After-bath routine</label><div class="compact-field"><span class="unit-input"><input id="routineLengthBath" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('routineLengthBath'); return false;">↶</button></div><div class="hint unit-hidden" id="routineLengthBathHint"></div></div>
-</div>
-<div class="grid">
-<div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('routineLengthNoBath'); return false;">↶</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
+<div class="settings-section">
+  <div class="settings-section-title">⏰ Wake Windows</div>
+  <div class="settings-section-subtitle">How long baby is awake before naps and bedtime.</div>
+  <div class="field section-gap"><label>First wake window</label><div class="template-duration-field"><span class="range-input"><input id="firstWWRange" value="40-45"></span><span class="range-convert" id="firstWWRangeConverted"></span></div><div class="hint unit-hidden" id="firstWWRangeHint"></div></div>
+  <div class="field section-gap"><label>Later wake windows</label><div class="template-duration-field"><span class="range-input"><input id="laterWWRange" value="55-65"></span><span class="range-convert" id="laterWWRangeConverted"></span></div><div class="hint unit-hidden" id="laterWWRangeHint"></div></div>
+  <div class="field"><label>Final Wake Window length</label><div class="compact-field"><span class="unit-input"><input id="finalWWLength" type="number" value="50"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('finalWWLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('finalWWLength'); return false;">↶</button></div><div class="hint unit-hidden" id="finalWWLengthHint"></div></div>
 </div>
 
-<div class="grid">
-<div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bedTopOffLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
+<div class="settings-section">
+  <div class="settings-section-title">😴 Naps</div>
+  <div class="settings-section-subtitle">Nap lengths and nap count.</div>
+  <div class="field section-gap"><label>First nap</label><div class="template-duration-field"><span class="range-input"><input id="firstNapRange" value="50-75"></span><span class="range-convert" id="firstNapRangeConverted"></span></div><div class="hint unit-hidden" id="firstNapRangeHint"></div></div>
+  <div class="field section-gap"><label>Regular naps</label><div class="template-duration-field"><span class="range-input"><input id="regularNapRange" value="90-120"></span><span class="range-convert" id="regularNapRangeConverted"></span></div><div class="hint unit-hidden" id="regularNapRangeHint"></div></div>
+  <div class="field section-gap"><label>Long afternoon nap</label><div class="template-duration-field"><span class="range-input"><input id="longNapRange" value="180"></span><span class="range-convert" id="longNapRangeConverted"></span></div><div class="hint unit-hidden" id="longNapRangeHint"></div></div>
+  <div class="grid">
+    <div class="field"><label>Projected naps</label><select id="maxNaps" class="compact-select"><option value="4">Up to 4 naps</option><option value="5" selected>Up to 5 naps</option></select></div>
+    <div class="field"><label>Cat nap length</label><div class="compact-field"><span class="unit-input"><input id="catNapLength" type="number" value="60"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('catNapLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('catNapLength'); return false;">↶</button></div><div class="hint unit-hidden" id="catNapLengthHint"></div></div>
+  </div>
 </div>
 
-<div class="grid">
-<div class="field"><label>Full feed length </label><div class="compact-field"><span class="unit-input"><input id="fullFeedLength" type="number" value="20"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('fullFeedLength'); return false;">↶</button></div><div class="hint unit-hidden" id="fullFeedLengthHint"></div></div>
+<div class="settings-section">
+  <div class="settings-section-title">🍼 Feeds</div>
+  <div class="settings-section-subtitle">Feed timing and feed-related settings.</div>
+  <div class="field section-gap"><label>Feed interval</label><div class="template-duration-field"><span class="range-input"><input id="feedRange" value="140-180"></span><span class="range-convert" id="feedRangeConverted"></span></div><div class="hint unit-hidden" id="feedRangeHint"></div></div>
+  <div class="field"><label>Long nap feed interval exception</label><div class="advanced-duration-field"><span class="range-input"><input id="longNapFeedRange" value="210"></span><span class="range-convert" id="longNapFeedRangeConverted"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField(\'longNapFeedRange\'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('longNapFeedRange'); return false;">↶</button></div><div class="hint unit-hidden" id="longNapFeedRangeHint"></div></div>
+  <div class="grid">
+    <div class="field"><label>Full feed length </label><div class="compact-field"><span class="unit-input"><input id="fullFeedLength" type="number" value="20"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('fullFeedLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('fullFeedLength'); return false;">↶</button></div><div class="hint unit-hidden" id="fullFeedLengthHint"></div></div>
+    <div class="field"><label>Final Wake Window feeding</label><select id="finalWakeFeedType" class="compact-select"><option value="nightcap">Night Cap</option><option value="regular" selected>Full Feed</option></select></div>
+  </div>
 </div>
-<div class="grid">
-<div class="field"><label>Digest length </label><div class="compact-field"><span class="unit-input"><input id="digestLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('digestLength'); return false;">↶</button></div><div class="hint unit-hidden" id="digestLengthHint"></div></div>
+
+<div class="settings-section">
+  <div class="settings-section-title">🌙 Bedtime</div>
+  <div class="settings-section-subtitle">Bedtime routine timing.</div>
+  <div class="grid">
+    <div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bathLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
+    <div class="field"><label>Bath length </label><div class="compact-field"><span class="unit-input"><input id="bathLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bathLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bathLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bathLengthHint"></div></div>
+    <div class="field"><label>Routine without bath</label><div class="compact-field"><span class="unit-input"><input id="routineLengthNoBath" type="number" value="15"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('routineLengthNoBath'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('routineLengthNoBath'); return false;">↶</button></div><div class="hint unit-hidden" id="routineLengthNoBathHint"></div></div>
+    <div class="field"><label>Bedtime top-off length </label><div class="compact-field"><span class="unit-input"><input id="bedTopOffLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('bedTopOffLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('bedTopOffLength'); return false;">↶</button></div><div class="hint unit-hidden" id="bedTopOffLengthHint"></div></div>
+  </div>
 </div>
-<div class="grid">
-<div class="field"><label>Wind-down length </label><div class="compact-field"><span class="unit-input"><input id="windDownLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength','catNapLength','finalWWLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('windDownLength','catNapLength','finalWWLength'); return false;">↶</button></div><div class="hint unit-hidden" id="windDownLengthHint"></div></div>
+
+<div class="settings-section">
+  <div class="settings-section-title">⚙️ Advanced</div>
+  <div class="settings-section-subtitle">Less-used timing controls.</div>
+  <div class="grid">
+    <div class="field"><label>Digest length </label><div class="compact-field"><span class="unit-input"><input id="digestLength" type="number" value="10"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('digestLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('digestLength'); return false;">↶</button></div><div class="hint unit-hidden" id="digestLengthHint"></div></div>
+    <div class="field"><label>Wind-down length </label><div class="compact-field"><span class="unit-input"><input id="windDownLength" type="number" value="5"></span><button type="button" class="secondary small-btn skip-btn" onclick="skipField('windDownLength'); return false;">Skip</button><button type="button" class="secondary small-btn restore-btn" title="Restore default" aria-label="Restore default" onclick="restoreField('windDownLength'); return false;">↶</button></div><div class="hint unit-hidden" id="windDownLengthHint"></div></div>
+  </div>
 </div>
-</details>
+
 <div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
 <div class="hint" id="saveStatus">Tap a time in the timeline to log actual times and recalculate the rest of the day.</div>
 </div>
@@ -359,7 +399,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v157';
+const STORAGE_KEY='babyflow_pwa_v159';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
