@@ -385,12 +385,13 @@ details.advanced[open]{background:#fff}
 <option value="Nursery Rhymes">Nursery Rhymes</option>
 <option value="Outfit change">Outfit change</option>
 <option value="Playtime">Playtime</option>
+<option value="Pool">Pool</option>
 <option value="Slowly waking up">Slowly waking up</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
 <option value="Sunshine">Sunshine</option>
 <option value="Sunshine and stretches">Sunshine and stretches</option>
-<option value="Swaddle and soothe">Swaddle and soothe</option>
+<option value="Swaddle & Soothe">Swaddle & Soothe</option>
 <option value="Swing">Swing</option>
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
@@ -399,7 +400,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v160';
+const STORAGE_KEY='babyflow_pwa_v161';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1197,12 +1198,13 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    const activityClass = (a.title === 'Nightcap' || a.title === 'Digest' || a.title === 'Feed') ? 'activity-feed-green' : 'activity-blue';
-    const activityType = (a.title === 'Nightcap' || a.title === 'Digest' || a.title === 'Feed') ? 'feed' : 'routine';
+    const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : a.title;
+    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
+    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
     const aEnd = a.end!=null ? a.end : null;
     const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
-    renderItems.push({t:aStart, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:a.title, time:aStart, start:aStart, end:aEnd, displayTime:display, note:'', chipType:'suggested', optionalEnd:true, manualFeed:(a.title==='Feed')}});
+    renderItems.push({t:aStart, html:'', ev:{key:a.id, groupKey:a.id, groupLabel:a.title, customClass:activityClass, type:activityType, title:displayTitle, time:aStart, start:aStart, end:aEnd, displayTime:display, note:'', chipType:'suggested', optionalEnd:true, manualFeed:(a.title==='Feed')}});
   });
 
   const bathSelected = !!$('bathLength').value;
