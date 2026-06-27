@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v164';
+const STORAGE_KEY='babyflow_pwa_v165';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1197,17 +1197,17 @@ function generateTimeline(){
       const digestStart = ev.end!=null ? ev.end : ev.time;
       const digestEnd = digestStart + digestLength;
       renderItems.push({t:digestStart, html:'', ev:{key:`digest-${ev.key}`, groupKey:ev.key, groupLabel:ev.title, type:'feed', title:'Digest', time:digestStart, start:digestStart, end:digestEnd, displayTime:`${ts(digestStart)} – ${ts(digestEnd)}`, note:'', chipType:'suggested'}});
-      if(ev.key === 'feed-1' && !deletedEventKeys.includes('auto-get-dressed-ww1')){
-        const gdActual = actuals['auto-get-dressed-ww1'] || {};
-        const gdProj = getProjectedForKey('auto-get-dressed-ww1');
+      if(ev.key === 'feed-1' && !deletedEventKeys.includes('activity-auto-get-dressed-ww1')){
+        const gdActual = actuals['activity-auto-get-dressed-ww1'] || {};
+        const gdProj = getProjectedForKey('activity-auto-get-dressed-ww1');
         const gdStart = gdActual.start ?? gdActual.time ?? gdProj.start ?? gdProj.time ?? digestEnd;
         const gdEnd = gdActual.end ?? gdProj.end ?? gdStart + 4;
-        renderItems.push({t:gdStart, html:'', ev:{key:'auto-get-dressed-ww1', groupKey:'ww-1', groupLabel:'Wake Window #1', customClass:'activity-blue', type:'routine', title:'Get dressed', time:gdStart, start:gdStart, end:gdEnd, displayTime:`${ts(gdStart)} – ${ts(gdEnd)}`, note:'', chipType:'suggested'}});
+        renderItems.push({t:gdStart, html:'', ev:{key:'activity-auto-get-dressed-ww1', groupKey:'activity-auto-get-dressed-ww1', groupLabel:'Get dressed', customClass:'activity-blue', type:'routine', title:'Get dressed', time:gdStart, start:gdStart, end:gdEnd, displayTime:`${ts(gdStart)} – ${ts(gdEnd)}`, note:'', chipType:'suggested'}});
       }
     }
   });
   dayActivities.forEach(a=>{
-    const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : a.title;
+    const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed for the day' ? 'Get dressed' : a.title);
     const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
     const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
@@ -1354,7 +1354,6 @@ function renumberTimelineFeeds(renderItems){
 
 function getHeaderForItem(ev){
     
-    if(baseKey === 'ww-1') return 'Wake Window #1';
 const key = ev?.key || '';
     const useNap5 = $('maxNaps')?.value === '5';
     let baseKey;
