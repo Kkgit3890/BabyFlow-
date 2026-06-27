@@ -386,7 +386,7 @@ details.advanced[open]{background:#fff}
 <option value="Outfit change">Outfit change</option>
 <option value="Playtime">Playtime</option>
 <option value="Pool">Pool</option>
-<option value="Slowly waking up">Slowly waking up</option>
+<option value="Slowly waking">Slowly waking</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
 <option value="Sunshine">Sunshine</option>
@@ -401,8 +401,8 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v165';
-const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
+const STORAGE_KEY='babyflow_pwa_v166';
+const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
 let projectedOverrides = {};
@@ -1207,7 +1207,7 @@ function generateTimeline(){
     }
   });
   dayActivities.forEach(a=>{
-    const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed for the day' ? 'Get dressed' : a.title);
+    const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed for the day' ? 'Get dressed' : (a.title === 'Slowly waking up' ? 'Slowly waking' : a.title));
     const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
     const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
@@ -1224,7 +1224,8 @@ function generateTimeline(){
       const swProj = getProjectedForKey('auto-slowly-waking-final');
       const swStart = swActual.start ?? swActual.time ?? swProj.start ?? swProj.time ?? lastNapForSlowWake.end;
       const swEnd = swActual.end ?? swProj.end ?? swStart + 3;
-      renderItems.push({t:swStart, html:'', ev:{key:'auto-slowly-waking-final', groupKey:'final-wake', groupLabel:'Final Wake Window', customClass:'activity-blue', type:'routine', title:'Slowly waking up', time:swStart, start:swStart, end:swEnd, displayTime:`${ts(swStart)} – ${ts(swEnd)}`, note:'', chipType:'suggested'}});
+      renderItems.push({t:swStart, html:'', ev:{key:'auto-slowly-waking-final', groupKey:'final-wake', groupLabel:'Final Wake Window', customClass:'activity-blue', type:'routine', title:'Slowly waking', time:swStart, start:swStart, end:swEnd, displayTime:`${ts(swStart)} – ${ts(swEnd)}`, note:'', chipType:'suggested'}});
+      bedtimeStart = Math.max(bedtimeStart, swEnd + SLOW_WAKE_BUFFER_MINUTES);
     }
   }
 
