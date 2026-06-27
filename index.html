@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v163';
+const STORAGE_KEY='babyflow_pwa_v164';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10;
 const actuals = {};
 let dayActivities = [];
@@ -1202,7 +1202,7 @@ function generateTimeline(){
         const gdProj = getProjectedForKey('auto-get-dressed-ww1');
         const gdStart = gdActual.start ?? gdActual.time ?? gdProj.start ?? gdProj.time ?? digestEnd;
         const gdEnd = gdActual.end ?? gdProj.end ?? gdStart + 4;
-        renderItems.push({t:gdStart, html:'', ev:{key:'auto-get-dressed-ww1', groupKey:'feed-1', groupLabel:'Feed 1', customClass:'activity-blue', type:'routine', title:'Get dressed', time:gdStart, start:gdStart, end:gdEnd, displayTime:`${ts(gdStart)} – ${ts(gdEnd)}`, note:'', chipType:'suggested'}});
+        renderItems.push({t:gdStart, html:'', ev:{key:'auto-get-dressed-ww1', groupKey:'ww-1', groupLabel:'Wake Window #1', customClass:'activity-blue', type:'routine', title:'Get dressed', time:gdStart, start:gdStart, end:gdEnd, displayTime:`${ts(gdStart)} – ${ts(gdEnd)}`, note:'', chipType:'suggested'}});
       }
     }
   });
@@ -1353,7 +1353,9 @@ function renumberTimelineFeeds(renderItems){
 }
 
 function getHeaderForItem(ev){
-    const key = ev?.key || '';
+    
+    if(baseKey === 'ww-1') return 'Wake Window #1';
+const key = ev?.key || '';
     const useNap5 = $('maxNaps')?.value === '5';
     let baseKey;
 
