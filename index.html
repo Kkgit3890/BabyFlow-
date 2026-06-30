@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v166';
+const STORAGE_KEY='babyflow_pwa_v167';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -787,8 +787,12 @@ function quickToggleActual(key){
     else actuals[key] = {type:ev.type, time:s};
   } else if(isRangeEvent){
     const s = ev.start!=null ? ev.start : ev.time;
-    const e = ev.end!=null ? ev.end : ev.time;
-    actuals[key] = {type:ev.type, start:s, end:e, time:s};
+    if(ev.optionalEnd && ev.end==null){
+      actuals[key] = {type:ev.type, time:s};
+    } else {
+      const e = ev.end!=null ? ev.end : ev.time;
+      actuals[key] = {type:ev.type, start:s, end:e, time:s};
+    }
   } else {
     const t = ev.time;
     actuals[key] = {type:ev.type, time:t};
@@ -1238,19 +1242,19 @@ function generateTimeline(){
     const bathActual = actuals['bath'] || {};
     const bathProj = getProjectedForKey('bath');
     const bathStart = bathActual.start ?? bathActual.time ?? bathProj.start ?? bathProj.time ?? tailStart;
-    const bathEnd = bathActual.end ?? bathProj.end ?? null;
-    const bathDisplay = bathEnd!=null ? `${ts(bathStart)} – ${ts(bathEnd)}` : ts(bathStart);
+    const bathEnd = bathActual.end ?? bathProj.end ?? (bathStart + bathLen);
+    const bathDisplay = `${ts(bathStart)} – ${ts(bathEnd)}`;
     renderItems.push({t:bathStart, html:'', ev:{key:'bath', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bath', time:bathStart, start:bathStart, end:bathEnd, displayTime:bathDisplay, note:'', chipType:'routine', optionalEnd:true}});
-    tailStart = bathEnd!=null ? bathEnd : bathStart + bathLen;
+    tailStart = bathEnd;
   }
 
   const routineActual = actuals['bedtime-routine'] || {};
   const routineProj = getProjectedForKey('bedtime-routine');
   const routineStart = routineActual.start ?? routineActual.time ?? routineProj.start ?? routineProj.time ?? tailStart;
-  const routineEnd = routineActual.end ?? routineProj.end ?? null;
-  const routineDisplay = routineEnd!=null ? `${ts(routineStart)} – ${ts(routineEnd)}` : ts(routineStart);
+  const routineEnd = routineActual.end ?? routineProj.end ?? (routineStart + routineLen);
+  const routineDisplay = `${ts(routineStart)} – ${ts(routineEnd)}`;
   if(!deletedEventKeys.includes('bedtime-routine')) renderItems.push({t:routineStart, html:'', ev:{key:'bedtime-routine', groupKey:'night', groupLabel:'Nighttime Routines', type:'routine', title:'Bedtime routine', time:routineStart, start:routineStart, end:routineEnd, displayTime:routineDisplay, note:'', chipType:'routine', optionalEnd:true}});
-  tailStart = routineEnd!=null ? routineEnd : routineStart + routineLen;
+  tailStart = routineEnd;
 
   if(!(useNap5 && $('finalWakeFeedType')?.value === 'regular') && !!$('bedTopOffLength').value && !deletedEventKeys.includes('bedtime-topoff')){
     const topActual = actuals['bedtime-topoff'] || {};
