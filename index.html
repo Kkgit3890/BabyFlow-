@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v167';
+const STORAGE_KEY='babyflow_pwa_v168';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -1236,6 +1236,19 @@ function generateTimeline(){
   const bathSelected = !!$('bathLength').value;
   const bathLen = bathSelected ? parseInt($('bathLength').value||'10',10) : 0;
   const routineLen = parseInt((bathSelected ? $('routineLengthBath').value : $('routineLengthNoBath').value) || '15', 10);
+
+  // In the final wake window, Bath + Bedtime routine must finish before Feed 6 starts.
+  // If there is extra space before Bath, pull the routine block earlier rather than allowing overlap.
+  const finalFeedEventForRoutine = events.find(ev => ev.key === 'final-feed');
+  const slowWakeEventForRoutine = renderItems.map(x=>x.ev).find(ev => ev && ev.key === 'auto-slowly-waking-final');
+  if(useNap5 && $('finalWakeFeedType')?.value === 'regular' && finalFeedEventForRoutine && !actuals['bath'] && !actuals['bedtime-routine'] && !projectedOverrides['bath'] && !projectedOverrides['bedtime-routine']){
+    const routineBlockDuration = bathLen + routineLen;
+    const earliestRoutineStart = slowWakeEventForRoutine ? ((slowWakeEventForRoutine.end ?? slowWakeEventForRoutine.time) + SLOW_WAKE_BUFFER_MINUTES) : bedtimeStart;
+    if(bedtimeStart + routineBlockDuration > finalFeedEventForRoutine.start){
+      bedtimeStart = Math.max(earliestRoutineStart, finalFeedEventForRoutine.start - routineBlockDuration);
+    }
+  }
+
   let tailStart = bedtimeStart;
 
   if(bathSelected && !deletedEventKeys.includes('bath')){
