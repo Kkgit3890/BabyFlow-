@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v170';
+const STORAGE_KEY='babyflow_pwa_v171';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -1011,53 +1011,53 @@ function generateTimeline(){
 
   const activeLongRange = (!!$('longNapFeedRange').value && longNapFeedR) ? longNapFeedR : feedR;
 
-  // If Feed 3 is running past the feed interval max, first try shortening Nap 2
-  // within the regular nap range so Feed 3 can happen earlier while still protecting Nap 3.
-  if(!actuals['nap-2'] && !(projectedOverrides && projectedOverrides['nap-2']) && !actuals['feed-3'] && !(projectedOverrides && projectedOverrides['feed-3'])){
+  // If Feed 3 is running past the feed interval max, try moving the whole
+  // Nap 2 → Feed 3 → Nap 3 sequence earlier while staying inside all ranges.
+  if(!actuals['nap-2'] && !(projectedOverrides && projectedOverrides['nap-2']) && !actuals['feed-3'] && !(projectedOverrides && projectedOverrides['feed-3']) && !actuals['nap-3'] && !(projectedOverrides && projectedOverrides['nap-3'])){
     const feed2Event = events.find(ev => ev.key === 'feed-2');
     const nap2Event = events.find(ev => ev.key === 'nap-2');
     const feed3Event = events.find(ev => ev.key === 'feed-3');
-    if(feed2Event && nap2Event && feed3Event && feed3Event.time - feed2Event.time > feedR.max){
+    const nap3Event = events.find(ev => ev.key === 'nap-3');
+
+    if(feed2Event && nap2Event && feed3Event && nap3Event && feed3Event.time - feed2Event.time > feedR.max){
       const desiredFeed3Start = feed2Event.time + feedR.max;
-      const neededNap2End = Math.min(nap2Event.end, desiredFeed3Start);
+      const desiredNap3Start = desiredFeed3Start + feedToNapClearance;
+
+      // Nap 3 should still follow the later wake window range after Nap 2.
+      let desiredNap2End = desiredNap3Start - laterWWc;
       const minNap2End = nap2Event.start + regNapR.min;
       const maxNap2End = nap2Event.start + regNapR.max;
-      const adjustedNap2End = Math.max(minNap2End, Math.min(maxNap2End, neededNap2End));
+      desiredNap2End = Math.max(minNap2End, Math.min(maxNap2End, desiredNap2End));
 
-      if(adjustedNap2End < nap2Event.end){
-        nap2Event.end = adjustedNap2End;
+      const possibleNap3Start = desiredNap2End + laterWWc;
+      const possibleFeed3Start = Math.max(feed2Event.time + feedR.min, possibleNap3Start - feedToNapClearance);
+
+      if(possibleFeed3Start <= feed2Event.time + feedR.max && desiredNap2End < nap2Event.end){
+        const oldNap3Duration = nap3Event.end - nap3Event.start;
+
+        nap2Event.end = desiredNap2End;
         nap2Event.displayTime = `${ts(nap2Event.start)} – ${ts(nap2Event.end)}`;
         nap2Event.durationText = pretty(nap2Event.end - nap2Event.start);
 
-        const newFeed3Start = Math.max(feed2Event.time + feedR.min, nap2Event.end);
-        if(newFeed3Start <= feed2Event.time + feedR.max){
-          feed3Event.time = newFeed3Start;
-          feed3Event.start = newFeed3Start;
-          feed3Event.end = newFeed3Start + fullFeedMinutes;
-          feed3Event.feedDuration = fullFeedMinutes;
-          feed3Event.displayTime = trackFeedDurations ? `${ts(newFeed3Start)} – ${ts(newFeed3Start + fullFeedMinutes)}` : ts(newFeed3Start);
-          feed3Event.note = trackFeedDurations ? `${pretty(newFeed3Start - feed2Event.time)} since Feed 2` : '';
+        feed3Event.time = possibleFeed3Start;
+        feed3Event.start = possibleFeed3Start;
+        feed3Event.end = possibleFeed3Start + fullFeedMinutes;
+        feed3Event.feedDuration = fullFeedMinutes;
+        feed3Event.displayTime = trackFeedDurations ? `${ts(possibleFeed3Start)} – ${ts(possibleFeed3Start + fullFeedMinutes)}` : ts(possibleFeed3Start);
+        feed3Event.note = trackFeedDurations ? `${pretty(possibleFeed3Start - feed2Event.time)} since Feed 2` : '';
 
-          const nap3EarliestFromFeed = newFeed3Start + feedToNapClearance;
-          if(nap3Start < nap3EarliestFromFeed){
-            nap3Start = nap3EarliestFromFeed;
-            const nap3Event = events.find(ev => ev.key === 'nap-3');
-            if(nap3Event){
-              const dur = nap3Event.end - nap3Event.start;
-              nap3Event.start = nap3Start;
-              nap3Event.end = nap3Start + dur;
-              nap3End = nap3Event.end;
-              nap3Event.displayTime = `${ts(nap3Event.start)} – ${ts(nap3Event.end)}`;
-              nap3Event.durationText = pretty(nap3Event.end - nap3Event.start);
-              nap3Event.note = `After ${pretty(nap3Event.start - nap2Event.end)} WW`;
-            }
-          }
+        nap3Start = possibleFeed3Start + feedToNapClearance;
+        nap3End = nap3Start + oldNap3Duration;
+        nap3Event.start = nap3Start;
+        nap3Event.end = nap3End;
+        nap3Event.displayTime = `${ts(nap3Start)} – ${ts(nap3End)}`;
+        nap3Event.durationText = pretty(nap3End - nap3Start);
+        nap3Event.note = `After ${pretty(nap3Start - nap2Event.end)} WW`;
 
-          lastFeed = newFeed3Start;
-          lastFullFeedStart = newFeed3Start;
-          lastFeedLabel = 'Feed 3';
-          feed3Time = newFeed3Start;
-        }
+        lastFeed = possibleFeed3Start;
+        lastFullFeedStart = possibleFeed3Start;
+        lastFeedLabel = 'Feed 3';
+        feed3Time = possibleFeed3Start;
       }
     }
   }
