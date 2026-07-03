@@ -401,7 +401,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v171';
+const STORAGE_KEY='babyflow_pwa_v172';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -1082,6 +1082,55 @@ function generateTimeline(){
       lastFullFeedStart = adjustedFeed3;
       lastFeedLabel = 'Feed 3';
       feed3Time = adjustedFeed3;
+    }
+  }
+
+  // Final pass: after the long-nap rule has had a chance to move Feed 3 later,
+  // make sure Feed 3 still obeys the normal feed interval by shifting the
+  // Nap 2 → Feed 3 → Nap 3 sequence earlier when possible.
+  if(!actuals['nap-2'] && !(projectedOverrides && projectedOverrides['nap-2']) && !actuals['feed-3'] && !(projectedOverrides && projectedOverrides['feed-3']) && !actuals['nap-3'] && !(projectedOverrides && projectedOverrides['nap-3'])){
+    const feed2Event = events.find(ev => ev.key === 'feed-2');
+    const nap2Event = events.find(ev => ev.key === 'nap-2');
+    const feed3Event = events.find(ev => ev.key === 'feed-3');
+    const nap3Event = events.find(ev => ev.key === 'nap-3');
+
+    if(feed2Event && nap2Event && feed3Event && nap3Event){
+      const maxAllowedFeed3 = feed2Event.time + feedR.max;
+      const overage = feed3Event.time - maxAllowedFeed3;
+      const nap2CanShortenBy = (nap2Event.end - nap2Event.start) - regNapR.min;
+
+      if(overage > 0 && nap2CanShortenBy >= overage){
+        const newFeed3Start = feed3Event.time - overage;
+        const newNap2End = nap2Event.end - overage;
+        const newNap3Start = nap3Event.start - overage;
+        const newNap3End = nap3Event.end - overage;
+
+        if(newFeed3Start >= feed2Event.time + feedR.min && newNap2End >= nap2Event.start + regNapR.min && newNap3Start >= newNap2End + laterWW.min && newNap3Start <= newNap2End + laterWW.max){
+          nap2Event.end = newNap2End;
+          nap2Event.displayTime = `${ts(nap2Event.start)} – ${ts(nap2Event.end)}`;
+          nap2Event.durationText = pretty(nap2Event.end - nap2Event.start);
+
+          feed3Event.time = newFeed3Start;
+          feed3Event.start = newFeed3Start;
+          feed3Event.end = newFeed3Start + fullFeedMinutes;
+          feed3Event.feedDuration = fullFeedMinutes;
+          feed3Event.displayTime = trackFeedDurations ? `${ts(newFeed3Start)} – ${ts(newFeed3Start + fullFeedMinutes)}` : ts(newFeed3Start);
+          feed3Event.note = trackFeedDurations ? `${pretty(newFeed3Start - feed2Event.time)} since Feed 2` : '';
+
+          nap3Start = newNap3Start;
+          nap3End = newNap3End;
+          nap3Event.start = newNap3Start;
+          nap3Event.end = newNap3End;
+          nap3Event.displayTime = `${ts(newNap3Start)} – ${ts(newNap3End)}`;
+          nap3Event.durationText = pretty(newNap3End - newNap3Start);
+          nap3Event.note = `After ${pretty(newNap3Start - newNap2End)} WW`;
+
+          lastFeed = newFeed3Start;
+          lastFullFeedStart = newFeed3Start;
+          lastFeedLabel = 'Feed 3';
+          feed3Time = newFeed3Start;
+        }
+      }
     }
   }
 
