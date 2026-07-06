@@ -375,6 +375,7 @@ details.advanced[open]{background:#fff}
 <option value="Babywear (Pack)">Babywear (Pack)</option>
 <option value="Back home (unload)">Back home (unload)</option>
 <option value="Bath">Bath</option>
+<option value="Burp">Burp</option>
 <option value="Cuddles">Cuddles</option>
 <option value="Diaper change">Diaper change</option>
 <option value="Digest">Digest</option>
@@ -405,7 +406,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v174';
+const STORAGE_KEY='babyflow_pwa_v175';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -471,6 +472,37 @@ const rng=t=>{if(!t) return null; t=String(t).trim().replace(/\s+/g,''); if(!t) 
 const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2);
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;
+
+
+function migrateBabyFlowStorage(){
+  try{
+    const currentDaysKey = STORAGE_KEY + '_days';
+    if(!localStorage.getItem(currentDaysKey)){
+      let bestDaysKey = null;
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && /^babyflow_pwa_v\d+_days$/.test(k) && k !== currentDaysKey){
+          if(!bestDaysKey || parseInt(k.match(/v(\d+)_days/)[1],10) > parseInt(bestDaysKey.match(/v(\d+)_days/)[1],10)){
+            bestDaysKey = k;
+          }
+        }
+      }
+      if(bestDaysKey) localStorage.setItem(currentDaysKey, localStorage.getItem(bestDaysKey));
+    }
+    if(!localStorage.getItem(STORAGE_KEY)){
+      let bestSettingsKey = null;
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && /^babyflow_pwa_v\d+$/.test(k) && k !== STORAGE_KEY){
+          if(!bestSettingsKey || parseInt(k.match(/v(\d+)/)[1],10) > parseInt(bestSettingsKey.match(/v(\d+)/)[1],10)){
+            bestSettingsKey = k;
+          }
+        }
+      }
+      if(bestSettingsKey) localStorage.setItem(STORAGE_KEY, localStorage.getItem(bestSettingsKey));
+    }
+  }catch(e){}
+}
 
 function getSelectedDateStr(){
   return $('selectedDate')?.value || localDateStr();
@@ -576,6 +608,21 @@ function closeOpenEditPanelsOnOutsideTap(event){
   }
 }
 document.addEventListener('click', closeOpenEditPanelsOnOutsideTap);
+
+
+function flushBabyFlowState(){
+  try{ saveActuals(); }catch(e){}
+  try{
+    const ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'];
+    let s={};
+    ids.forEach(id=>{ if($(id)) s[id]=$(id).value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  }catch(e){}
+}
+window.addEventListener('pagehide', flushBabyFlowState);
+window.addEventListener('beforeunload', flushBabyFlowState);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') flushBabyFlowState(); });
+
 
 
 
@@ -1310,8 +1357,8 @@ function generateTimeline(){
   });
   dayActivities.forEach(a=>{
     const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed' ? 'Get dressed' : (a.title === 'Slowly waking up' ? 'Slowly waking' : a.title));
-    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
-    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off') ? 'feed' : 'routine';
+    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off' || displayTitle === 'Burp') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
+    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off' || displayTitle === 'Burp') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
     const aEnd = a.end!=null ? a.end : null;
     const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
@@ -1435,6 +1482,7 @@ function renumberTimelineFeeds(renderItems){
         title !== 'Nightcap' &&
         title !== 'Digest' &&
         title !== 'Top-Off' &&
+        title !== 'Burp' &&
         !key.startsWith('digest-');
     })
     .sort((a,b)=>(a.t??0)-(b.t??0));
@@ -1717,7 +1765,7 @@ function updateRangeConversions(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  restoreBabyFlowOnOpen(); updateRangeConversions(); const wt=$('wakeTime'); if(wt){ wt.addEventListener('change',()=>{ normalizeWakeTimeAMOnly(); saveState(); generateTimeline(); }); } updateRangeConversions();
+  migrateBabyFlowStorage(); restoreBabyFlowOnOpen(); updateRangeConversions(); const wt=$('wakeTime'); if(wt){ wt.addEventListener('change',()=>{ normalizeWakeTimeAMOnly(); saveState(); generateTimeline(); }); } updateRangeConversions();
 
   ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'].forEach(id=>{
     if($(id)) $(id).addEventListener('change',()=>{ saveState(); updateHints(); updateConditionalFields(); updateRangeConversions(); });
