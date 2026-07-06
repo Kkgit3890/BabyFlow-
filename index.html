@@ -371,6 +371,8 @@ details.advanced[open]{background:#fff}
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="event.stopPropagation(); toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" onclick="event.stopPropagation()" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
 <option value="Babywear (Errands)">Babywear (Errands)</option>
+<option value="Babywear (Out)">Babywear (Out)</option>
+<option value="Babywear (Pack)">Babywear (Pack)</option>
 <option value="Back home (unload)">Back home (unload)</option>
 <option value="Bath">Bath</option>
 <option value="Cuddles">Cuddles</option>
@@ -379,6 +381,7 @@ details.advanced[open]{background:#fff}
 <option value="Errands">Errands</option>
 <option value="Feed">Feed</option>
 <option value="Get dressed">Get dressed</option>
+<option value="Held by fam/friends">Held by fam/friends</option>
 <option value="Load up car">Load up car</option>
 <option value="Lotion & Jammies">Lotion & Jammies</option>
 <option value="Nightcap">Nightcap</option>
@@ -394,6 +397,7 @@ details.advanced[open]{background:#fff}
 <option value="Swaddle & Soothe">Swaddle & Soothe</option>
 <option value="Swing">Swing</option>
 <option value="Swing to sleep">Swing to sleep</option>
+<option value="Top-Off">Top-Off</option>
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
 <option value="Wind-down">Wind-down</option>
@@ -401,7 +405,7 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v172';
+const STORAGE_KEY='babyflow_pwa_v173';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -1306,8 +1310,8 @@ function generateTimeline(){
   });
   dayActivities.forEach(a=>{
     const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed' ? 'Get dressed' : (a.title === 'Slowly waking up' ? 'Slowly waking' : a.title));
-    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
-    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'feed' : 'routine';
+    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
+    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
     const aEnd = a.end!=null ? a.end : null;
     const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
