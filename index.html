@@ -406,7 +406,9 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_pwa_v176';
+const STORAGE_KEY = 'babyflow_settings';
+const DAYS_STORAGE_KEY = 'babyflow_days';
+const UI_STORAGE_KEY = 'babyflow_ui';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -477,32 +479,61 @@ const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class
 
 function migrateBabyFlowStorage(){
   try{
-    const currentDaysKey = STORAGE_KEY + '_days';
-    if(!localStorage.getItem(currentDaysKey)){
-      let bestDaysKey = null;
+    if(!localStorage.getItem(DAYS_STORAGE_KEY)){
+      let bestKey = null;
+      let bestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
-        if(k && /^babyflow_pwa_v\d+_days$/.test(k) && k !== currentDaysKey){
-          if(!bestDaysKey || parseInt(k.match(/v(\d+)_days/)[1],10) > parseInt(bestDaysKey.match(/v(\d+)_days/)[1],10)){
-            bestDaysKey = k;
+        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_days$/);
+        if(match){
+          const version = parseInt(match[1],10);
+          if(version > bestVersion){
+            bestVersion = version;
+            bestKey = k;
           }
         }
       }
-      if(bestDaysKey) localStorage.setItem(currentDaysKey, localStorage.getItem(bestDaysKey));
+      if(bestKey) localStorage.setItem(DAYS_STORAGE_KEY, localStorage.getItem(bestKey));
     }
+
     if(!localStorage.getItem(STORAGE_KEY)){
-      let bestSettingsKey = null;
+      let bestKey = null;
+      let bestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
-        if(k && /^babyflow_pwa_v\d+$/.test(k) && k !== STORAGE_KEY){
-          if(!bestSettingsKey || parseInt(k.match(/v(\d+)/)[1],10) > parseInt(bestSettingsKey.match(/v(\d+)/)[1],10)){
-            bestSettingsKey = k;
+        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)$/);
+        if(match){
+          const version = parseInt(match[1],10);
+          if(version > bestVersion){
+            bestVersion = version;
+            bestKey = k;
           }
         }
       }
-      if(bestSettingsKey) localStorage.setItem(STORAGE_KEY, localStorage.getItem(bestSettingsKey));
+      if(bestKey) localStorage.setItem(STORAGE_KEY, localStorage.getItem(bestKey));
     }
-  }catch(e){}
+
+    if(!localStorage.getItem(UI_STORAGE_KEY)){
+      let bestKey = null;
+      let bestVersion = -1;
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_ui$/);
+        if(match){
+          const version = parseInt(match[1],10);
+          if(version > bestVersion){
+            bestVersion = version;
+            bestKey = k;
+          }
+        }
+      }
+      if(bestKey) localStorage.setItem(UI_STORAGE_KEY, localStorage.getItem(bestKey));
+    }
+
+    localStorage.setItem('babyflow_storage_schema', '2');
+  }catch(e){
+    console.warn('BabyFlow storage migration failed:', e);
+  }
 }
 
 function getSelectedDateStr(){
@@ -512,10 +543,10 @@ function getActiveDayKey(){
   return activeDayKey || getSelectedDateStr();
 }
 function getDaysStore(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY+'_days') || '{}') || {}; }catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem(DAYS_STORAGE_KEY) || '{}') || {}; }catch(e){ return {}; }
 }
 function saveDaysStore(store){
-  localStorage.setItem(STORAGE_KEY+'_days', JSON.stringify(store));
+  localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(store));
 }
 function saveActualsForDay(dayKey){
   if(!dayKey) dayKey = getActiveDayKey();
@@ -525,20 +556,44 @@ function saveActualsForDay(dayKey){
   days[dayKey].activities = JSON.parse(JSON.stringify(dayActivities));
   days[dayKey].projectedOverrides = JSON.parse(JSON.stringify(projectedOverrides));
   days[dayKey].deletedEventKeys = JSON.parse(JSON.stringify(deletedEventKeys));
+
+  const settings = {};
+  ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'].forEach(id => {
+    if($(id)) settings[id] = $(id).value;
+  });
+  days[dayKey].settings = settings;
+
   saveDaysStore(days);
-  localStorage.setItem(STORAGE_KEY+'_ui', JSON.stringify(uiState));
+  localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(uiState));
 }
 function loadStoredActuals(dayKey){
   dayKey = dayKey || getSelectedDateStr();
   activeDayKey = dayKey;
+
   const days = getDaysStore();
   const day = days[dayKey] || {};
+
   Object.keys(actuals).forEach(k=>delete actuals[k]);
   Object.assign(actuals, day.actuals || {});
   projectedOverrides = day.projectedOverrides || {};
   dayActivities = Array.isArray(day.activities) ? day.activities : [];
   deletedEventKeys = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys : [];
-  try{ const rawUI=localStorage.getItem(STORAGE_KEY+'_ui'); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
+
+  if(day.settings){
+    Object.entries(day.settings).forEach(([id,value]) => {
+      if($(id)) $(id).value = value;
+    });
+    try{
+      updateConditionalFields();
+      updateHints();
+      updateRangeConversions();
+    }catch(e){}
+  }
+
+  try{
+    const rawUI = localStorage.getItem(UI_STORAGE_KEY);
+    if(rawUI) Object.assign(uiState, JSON.parse(rawUI) || {});
+  }catch(e){}
 }
 function saveActuals(){
   saveActualsForDay(getActiveDayKey());
@@ -557,7 +612,7 @@ function clearActuals(){
     days[key].deletedEventKeys = [];
     saveDaysStore(days);
   }
-  localStorage.removeItem(STORAGE_KEY+'_ui');
+  localStorage.removeItem(UI_STORAGE_KEY);
   uiState.collapsePast = false;
   recalcFromKey = null;
 }
