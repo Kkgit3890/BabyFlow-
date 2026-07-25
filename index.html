@@ -357,7 +357,7 @@ details.advanced[open]{background:#fff}
   </div>
 </div>
 
-<div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
+<div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button><button class="secondary" onclick="showBabyFlowRecoveryReport()">Recovery report</button></div>
 <div class="hint" id="saveStatus">Tap a time in the timeline to log actual times and recalculate the rest of the day.</div>
 </div>
 
@@ -406,9 +406,9 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY = 'babyflow_settings';
-const DAYS_STORAGE_KEY = 'babyflow_days';
-const UI_STORAGE_KEY = 'babyflow_ui';
+const STORAGE_KEY='babyflow_settings';
+const DAYS_STORAGE_KEY='babyflow_days';
+const UI_STORAGE_KEY='babyflow_ui';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -477,94 +477,93 @@ const chip=t=>`<span class="chip ${t}">${t}</span>`;
 const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;
 
 
+function babyFlowRecordScore(record){
+  if(!record || typeof record !== 'object') return 0;
+  let score = 0;
+  try{
+    const actuals = record.actuals && typeof record.actuals === 'object' ? record.actuals : {};
+    const activities = Array.isArray(record.activities) ? record.activities : [];
+    const projected = record.projectedOverrides && typeof record.projectedOverrides === 'object' ? record.projectedOverrides : {};
+    const deleted = Array.isArray(record.deletedEventKeys) ? record.deletedEventKeys : [];
+    const settings = record.settings && typeof record.settings === 'object' ? record.settings : {};
+    score += Object.keys(actuals).length * 1000;
+    score += activities.length * 500;
+    score += Object.keys(projected).length * 250;
+    score += deleted.length * 25;
+    score += Object.keys(settings).length * 5;
+    score += JSON.stringify(record).length;
+  }catch(e){}
+  return score;
+}
+
 function migrateBabyFlowStorage(){
   try{
-    const safeParse = raw => {
-      try{ return JSON.parse(raw || '{}') || {}; }catch(e){ return {}; }
-    };
-    const dayScore = day => {
-      if(!day || typeof day !== 'object') return 0;
-      const actualCount = day.actuals && typeof day.actuals === 'object' ? Object.keys(day.actuals).length : 0;
-      const activityCount = Array.isArray(day.activities) ? day.activities.length : 0;
-      const overrideCount = day.projectedOverrides && typeof day.projectedOverrides === 'object' ? Object.keys(day.projectedOverrides).length : 0;
-      const deletedCount = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys.length : 0;
-      const settingsCount = day.settings && typeof day.settings === 'object'
-        ? Object.values(day.settings).filter(v => v !== '' && v != null).length : 0;
-      return (actualCount * 20) + (activityCount * 10) + (overrideCount * 8) + (deletedCount * 2) + settingsCount;
-    };
-
-    // Start with whatever is already in permanent storage.
-    const mergedDays = safeParse(localStorage.getItem(DAYS_STORAGE_KEY));
-    const daySources = {};
-    Object.keys(mergedDays).forEach(date => { daySources[date] = 'permanent'; });
-
-    // Recover dates from every prior version. Newer versions are considered first,
-    // but a genuinely fuller record wins over an empty/incomplete one.
-    const legacyDayKeys = [];
+    const candidateDayKeys = [];
     for(let i=0;i<localStorage.length;i++){
       const k = localStorage.key(i);
-      const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_days$/);
-      if(match) legacyDayKeys.push({key:k, version:parseInt(match[1],10)});
+      if(k && (/^babyflow_pwa_v\d+_days$/.test(k) || k === DAYS_STORAGE_KEY)) candidateDayKeys.push(k);
     }
-    legacyDayKeys.sort((a,b)=>b.version-a.version);
 
-    legacyDayKeys.forEach(source => {
-      const store = safeParse(localStorage.getItem(source.key));
-      Object.entries(store).forEach(([date, candidate]) => {
-        const existing = mergedDays[date];
-        const candidateScore = dayScore(candidate);
-        const existingScore = dayScore(existing);
-        if(!existing || candidateScore > existingScore){
-          mergedDays[date] = candidate;
-          daySources[date] = source.key;
+    // Oldest first, then choose the richest real record for each calendar date.
+    candidateDayKeys.sort((a,b)=>{
+      const av = a === DAYS_STORAGE_KEY ? 999999 : parseInt((a.match(/v(\d+)_days/)||[])[1]||'0',10);
+      const bv = b === DAYS_STORAGE_KEY ? 999999 : parseInt((b.match(/v(\d+)_days/)||[])[1]||'0',10);
+      return av-bv;
+    });
+
+    const recoveredDays = {};
+    const recoveredFrom = {};
+    candidateDayKeys.forEach(key=>{
+      let store = {};
+      try{ store = JSON.parse(localStorage.getItem(key) || '{}') || {}; }catch(e){ store = {}; }
+      Object.entries(store).forEach(([date,record])=>{
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+        const incomingScore = babyFlowRecordScore(record);
+        const currentScore = babyFlowRecordScore(recoveredDays[date]);
+        if(incomingScore > currentScore){
+          recoveredDays[date] = record;
+          recoveredFrom[date] = key;
         }
       });
     });
 
-    localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(mergedDays));
+    localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(recoveredDays));
+    localStorage.setItem('babyflow_recovery_sources', JSON.stringify(recoveredFrom));
+    localStorage.setItem('babyflow_storage_schema', '3');
 
-    // Recover settings if permanent settings are absent or blank.
-    const currentSettings = safeParse(localStorage.getItem(STORAGE_KEY));
-    const currentSettingsScore = Object.values(currentSettings).filter(v => v !== '' && v != null).length;
-    if(currentSettingsScore === 0){
+    // Recover settings from the newest non-empty versioned settings object.
+    if(!localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) === '{}'){
       let bestSettings = null;
-      let bestScore = -1;
       let bestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
-        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)$/);
-        if(!match) continue;
-        const candidate = safeParse(localStorage.getItem(k));
-        const score = Object.values(candidate).filter(v => v !== '' && v != null).length;
-        const version = parseInt(match[1],10);
-        if(score > bestScore || (score === bestScore && version > bestVersion)){
-          bestSettings = candidate;
-          bestScore = score;
-          bestVersion = version;
-        }
+        const m = k && k.match(/^babyflow_pwa_v(\d+)$/);
+        if(!m) continue;
+        const raw = localStorage.getItem(k);
+        if(!raw || raw === '{}') continue;
+        const version = parseInt(m[1],10);
+        if(version > bestVersion){ bestVersion = version; bestSettings = raw; }
       }
-      if(bestSettings) localStorage.setItem(STORAGE_KEY, JSON.stringify(bestSettings));
+      if(bestSettings) localStorage.setItem(STORAGE_KEY, bestSettings);
     }
 
-    // Recover UI state if absent.
+    // Recover UI state from newest available version.
     if(!localStorage.getItem(UI_STORAGE_KEY)){
-      let newestUi = null;
-      let newestVersion = -1;
+      let bestUi = null;
+      let bestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
-        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_ui$/);
-        if(match && parseInt(match[1],10) > newestVersion){
-          newestVersion = parseInt(match[1],10);
-          newestUi = localStorage.getItem(k);
-        }
+        const m = k && k.match(/^babyflow_pwa_v(\d+)_ui$/);
+        if(!m) continue;
+        const raw = localStorage.getItem(k);
+        if(!raw) continue;
+        const version = parseInt(m[1],10);
+        if(version > bestVersion){ bestVersion = version; bestUi = raw; }
       }
-      if(newestUi) localStorage.setItem(UI_STORAGE_KEY, newestUi);
+      if(bestUi) localStorage.setItem(UI_STORAGE_KEY, bestUi);
     }
-
-    localStorage.setItem('babyflow_storage_schema', '3');
-    localStorage.setItem('babyflow_last_recovery_sources', JSON.stringify(daySources));
   }catch(e){
-    console.warn('BabyFlow storage recovery failed:', e);
+    console.error('BabyFlow exact storage recovery failed:', e);
   }
 }
 
@@ -588,44 +587,20 @@ function saveActualsForDay(dayKey){
   days[dayKey].activities = JSON.parse(JSON.stringify(dayActivities));
   days[dayKey].projectedOverrides = JSON.parse(JSON.stringify(projectedOverrides));
   days[dayKey].deletedEventKeys = JSON.parse(JSON.stringify(deletedEventKeys));
-
-  const settings = {};
-  ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'].forEach(id => {
-    if($(id)) settings[id] = $(id).value;
-  });
-  days[dayKey].settings = settings;
-
   saveDaysStore(days);
   localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(uiState));
 }
 function loadStoredActuals(dayKey){
   dayKey = dayKey || getSelectedDateStr();
   activeDayKey = dayKey;
-
   const days = getDaysStore();
   const day = days[dayKey] || {};
-
   Object.keys(actuals).forEach(k=>delete actuals[k]);
   Object.assign(actuals, day.actuals || {});
   projectedOverrides = day.projectedOverrides || {};
   dayActivities = Array.isArray(day.activities) ? day.activities : [];
   deletedEventKeys = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys : [];
-
-  if(day.settings){
-    Object.entries(day.settings).forEach(([id,value]) => {
-      if($(id)) $(id).value = value;
-    });
-    try{
-      updateConditionalFields();
-      updateHints();
-      updateRangeConversions();
-    }catch(e){}
-  }
-
-  try{
-    const rawUI = localStorage.getItem(UI_STORAGE_KEY);
-    if(rawUI) Object.assign(uiState, JSON.parse(rawUI) || {});
-  }catch(e){}
+  try{ const rawUI=localStorage.getItem(UI_STORAGE_KEY); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
 }
 function saveActuals(){
   saveActualsForDay(getActiveDayKey());
@@ -647,6 +622,23 @@ function clearActuals(){
   localStorage.removeItem(UI_STORAGE_KEY);
   uiState.collapsePast = false;
   recalcFromKey = null;
+}
+
+function showBabyFlowRecoveryReport(){
+  try{
+    const days = getDaysStore();
+    const sources = JSON.parse(localStorage.getItem('babyflow_recovery_sources') || '{}');
+    const dates = Object.keys(days).sort();
+    const lines = dates.map(date => {
+      const record = days[date] || {};
+      const actualCount = record.actuals && typeof record.actuals === 'object' ? Object.keys(record.actuals).length : 0;
+      const activityCount = Array.isArray(record.activities) ? record.activities.length : 0;
+      return `${date}: ${actualCount} actuals, ${activityCount} activities${sources[date] ? ` — from ${sources[date]}` : ''}`;
+    });
+    alert(lines.length ? `Recovered BabyFlow dates:\n\n${lines.join('\n')}` : 'No saved BabyFlow dates were found in this app storage.');
+  }catch(e){
+    alert('Unable to read the recovery report.');
+  }
 }
 
 function updateConditionalFields(){
@@ -696,12 +688,8 @@ function shiftDate(days){
 
 
 function handleSelectedDateChange(){
-  const nextDayKey = getSelectedDateStr();
-  const previousDayKey = getActiveDayKey();
-  if(previousDayKey && previousDayKey !== nextDayKey){
-    saveActualsForDay(previousDayKey);
-  }
-  loadStoredActuals(nextDayKey);
+  saveActualsForDay(getActiveDayKey());
+  loadStoredActuals(getSelectedDateStr());
   generateTimeline();
 }
 
