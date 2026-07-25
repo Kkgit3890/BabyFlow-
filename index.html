@@ -479,60 +479,92 @@ const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class
 
 function migrateBabyFlowStorage(){
   try{
-    if(!localStorage.getItem(DAYS_STORAGE_KEY)){
-      let bestKey = null;
-      let bestVersion = -1;
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_days$/);
-        if(match){
-          const version = parseInt(match[1],10);
-          if(version > bestVersion){
-            bestVersion = version;
-            bestKey = k;
-          }
-        }
-      }
-      if(bestKey) localStorage.setItem(DAYS_STORAGE_KEY, localStorage.getItem(bestKey));
-    }
+    const safeParse = raw => {
+      try{ return JSON.parse(raw || '{}') || {}; }catch(e){ return {}; }
+    };
+    const dayScore = day => {
+      if(!day || typeof day !== 'object') return 0;
+      const actualCount = day.actuals && typeof day.actuals === 'object' ? Object.keys(day.actuals).length : 0;
+      const activityCount = Array.isArray(day.activities) ? day.activities.length : 0;
+      const overrideCount = day.projectedOverrides && typeof day.projectedOverrides === 'object' ? Object.keys(day.projectedOverrides).length : 0;
+      const deletedCount = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys.length : 0;
+      const settingsCount = day.settings && typeof day.settings === 'object'
+        ? Object.values(day.settings).filter(v => v !== '' && v != null).length : 0;
+      return (actualCount * 20) + (activityCount * 10) + (overrideCount * 8) + (deletedCount * 2) + settingsCount;
+    };
 
-    if(!localStorage.getItem(STORAGE_KEY)){
-      let bestKey = null;
+    // Start with whatever is already in permanent storage.
+    const mergedDays = safeParse(localStorage.getItem(DAYS_STORAGE_KEY));
+    const daySources = {};
+    Object.keys(mergedDays).forEach(date => { daySources[date] = 'permanent'; });
+
+    // Recover dates from every prior version. Newer versions are considered first,
+    // but a genuinely fuller record wins over an empty/incomplete one.
+    const legacyDayKeys = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_days$/);
+      if(match) legacyDayKeys.push({key:k, version:parseInt(match[1],10)});
+    }
+    legacyDayKeys.sort((a,b)=>b.version-a.version);
+
+    legacyDayKeys.forEach(source => {
+      const store = safeParse(localStorage.getItem(source.key));
+      Object.entries(store).forEach(([date, candidate]) => {
+        const existing = mergedDays[date];
+        const candidateScore = dayScore(candidate);
+        const existingScore = dayScore(existing);
+        if(!existing || candidateScore > existingScore){
+          mergedDays[date] = candidate;
+          daySources[date] = source.key;
+        }
+      });
+    });
+
+    localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(mergedDays));
+
+    // Recover settings if permanent settings are absent or blank.
+    const currentSettings = safeParse(localStorage.getItem(STORAGE_KEY));
+    const currentSettingsScore = Object.values(currentSettings).filter(v => v !== '' && v != null).length;
+    if(currentSettingsScore === 0){
+      let bestSettings = null;
+      let bestScore = -1;
       let bestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
         const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)$/);
-        if(match){
-          const version = parseInt(match[1],10);
-          if(version > bestVersion){
-            bestVersion = version;
-            bestKey = k;
-          }
+        if(!match) continue;
+        const candidate = safeParse(localStorage.getItem(k));
+        const score = Object.values(candidate).filter(v => v !== '' && v != null).length;
+        const version = parseInt(match[1],10);
+        if(score > bestScore || (score === bestScore && version > bestVersion)){
+          bestSettings = candidate;
+          bestScore = score;
+          bestVersion = version;
         }
       }
-      if(bestKey) localStorage.setItem(STORAGE_KEY, localStorage.getItem(bestKey));
+      if(bestSettings) localStorage.setItem(STORAGE_KEY, JSON.stringify(bestSettings));
     }
 
+    // Recover UI state if absent.
     if(!localStorage.getItem(UI_STORAGE_KEY)){
-      let bestKey = null;
-      let bestVersion = -1;
+      let newestUi = null;
+      let newestVersion = -1;
       for(let i=0;i<localStorage.length;i++){
         const k = localStorage.key(i);
         const match = k && k.match(/^babyflow(?:_local)?(?:_pwa)?_v(\d+)_ui$/);
-        if(match){
-          const version = parseInt(match[1],10);
-          if(version > bestVersion){
-            bestVersion = version;
-            bestKey = k;
-          }
+        if(match && parseInt(match[1],10) > newestVersion){
+          newestVersion = parseInt(match[1],10);
+          newestUi = localStorage.getItem(k);
         }
       }
-      if(bestKey) localStorage.setItem(UI_STORAGE_KEY, localStorage.getItem(bestKey));
+      if(newestUi) localStorage.setItem(UI_STORAGE_KEY, newestUi);
     }
 
-    localStorage.setItem('babyflow_storage_schema', '2');
+    localStorage.setItem('babyflow_storage_schema', '3');
+    localStorage.setItem('babyflow_last_recovery_sources', JSON.stringify(daySources));
   }catch(e){
-    console.warn('BabyFlow storage migration failed:', e);
+    console.warn('BabyFlow storage recovery failed:', e);
   }
 }
 
@@ -664,8 +696,12 @@ function shiftDate(days){
 
 
 function handleSelectedDateChange(){
-  saveActualsForDay(getActiveDayKey());
-  loadStoredActuals(getSelectedDateStr());
+  const nextDayKey = getSelectedDateStr();
+  const previousDayKey = getActiveDayKey();
+  if(previousDayKey && previousDayKey !== nextDayKey){
+    saveActualsForDay(previousDayKey);
+  }
+  loadStoredActuals(nextDayKey);
   generateTimeline();
 }
 
@@ -1872,7 +1908,6 @@ window.addEventListener('DOMContentLoaded',()=>{
     if($(id)) $(id).addEventListener('input',()=>{ saveState(); updateHints(); updateConditionalFields(); updateRangeConversions(); });
   });
 
-  if($('selectedDate')) $('selectedDate').addEventListener('change',()=>{ saveState(); loadStoredActuals(); generateTimeline(); });
 });
 
 try{
