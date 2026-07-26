@@ -357,7 +357,7 @@ details.advanced[open]{background:#fff}
   </div>
 </div>
 
-<div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button><button class="secondary" onclick="showBabyFlowRecoveryReport()">Recovery report</button></div>
+<div class="row"><button class="primary" onclick="generateTimeline()">Generate / Recalculate</button><button class="secondary" onclick="loadExample()">Load example</button><button class="secondary" onclick="saveState()">Save</button><button class="danger" onclick="clearAll()">Clear all</button></div>
 <div class="hint" id="saveStatus">Tap a time in the timeline to log actual times and recalculate the rest of the day.</div>
 </div>
 
@@ -371,18 +371,14 @@ details.advanced[open]{background:#fff}
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="event.stopPropagation(); toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" onclick="event.stopPropagation()" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
 <option value="Babywear (Errands)">Babywear (Errands)</option>
-<option value="Babywear (Out)">Babywear (Out)</option>
-<option value="Babywear (Pack)">Babywear (Pack)</option>
 <option value="Back home (unload)">Back home (unload)</option>
 <option value="Bath">Bath</option>
-<option value="Burp">Burp</option>
 <option value="Cuddles">Cuddles</option>
 <option value="Diaper change">Diaper change</option>
 <option value="Digest">Digest</option>
 <option value="Errands">Errands</option>
 <option value="Feed">Feed</option>
 <option value="Get dressed">Get dressed</option>
-<option value="Held by fam/friends">Held by fam/friends</option>
 <option value="Load up car">Load up car</option>
 <option value="Lotion & Jammies">Lotion & Jammies</option>
 <option value="Nightcap">Nightcap</option>
@@ -398,7 +394,6 @@ details.advanced[open]{background:#fff}
 <option value="Swaddle & Soothe">Swaddle & Soothe</option>
 <option value="Swing">Swing</option>
 <option value="Swing to sleep">Swing to sleep</option>
-<option value="Top-Off">Top-Off</option>
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
 <option value="Wind-down">Wind-down</option>
@@ -406,16 +401,13 @@ details.advanced[open]{background:#fff}
 </div>
 
 <script>
-const STORAGE_KEY='babyflow_settings';
-const DAYS_STORAGE_KEY='babyflow_days';
-const UI_STORAGE_KEY='babyflow_ui';
+const STORAGE_KEY='babyflow_pwa_v172';
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
 let projectedOverrides = {};
 let deletedEventKeys = [];
 const uiState = { collapsePast:false };
-let activeDayKey = null;
 let recalcFromKey = null;
 const editableTypes = new Set(['nap','feed','routine']);
 const $=id=>document.getElementById(id);
@@ -476,134 +468,35 @@ const rv=(r,m='mid')=>m==='min'?r.min:m==='max'?r.max:Math.round((r.min+r.max)/2
 const chip=t=>`<span class="chip ${t}">${t}</span>`;
 const card=(title,time,note,chipType,duration='')=>`<div class="item"><div class="item-top"><div><div><b>${title}</b></div>${chipType?chip(chipType):''}</div><div class="item-right"><div>${time}</div>${duration?`<div class="item-duration-right">(${duration})</div>`:''}</div></div>${note?`<div class="item-note">${note}</div>`:''}</div>`;
 
-
-function babyFlowRecordScore(record){
-  if(!record || typeof record !== 'object') return 0;
-  let score = 0;
-  try{
-    const actuals = record.actuals && typeof record.actuals === 'object' ? record.actuals : {};
-    const activities = Array.isArray(record.activities) ? record.activities : [];
-    const projected = record.projectedOverrides && typeof record.projectedOverrides === 'object' ? record.projectedOverrides : {};
-    const deleted = Array.isArray(record.deletedEventKeys) ? record.deletedEventKeys : [];
-    const settings = record.settings && typeof record.settings === 'object' ? record.settings : {};
-    score += Object.keys(actuals).length * 1000;
-    score += activities.length * 500;
-    score += Object.keys(projected).length * 250;
-    score += deleted.length * 25;
-    score += Object.keys(settings).length * 5;
-    score += JSON.stringify(record).length;
-  }catch(e){}
-  return score;
-}
-
-function migrateBabyFlowStorage(){
-  try{
-    const candidateDayKeys = [];
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(k && (/^babyflow_pwa_v\d+_days$/.test(k) || k === DAYS_STORAGE_KEY)) candidateDayKeys.push(k);
-    }
-
-    // Oldest first, then choose the richest real record for each calendar date.
-    candidateDayKeys.sort((a,b)=>{
-      const av = a === DAYS_STORAGE_KEY ? 999999 : parseInt((a.match(/v(\d+)_days/)||[])[1]||'0',10);
-      const bv = b === DAYS_STORAGE_KEY ? 999999 : parseInt((b.match(/v(\d+)_days/)||[])[1]||'0',10);
-      return av-bv;
-    });
-
-    const recoveredDays = {};
-    const recoveredFrom = {};
-    candidateDayKeys.forEach(key=>{
-      let store = {};
-      try{ store = JSON.parse(localStorage.getItem(key) || '{}') || {}; }catch(e){ store = {}; }
-      Object.entries(store).forEach(([date,record])=>{
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
-        const incomingScore = babyFlowRecordScore(record);
-        const currentScore = babyFlowRecordScore(recoveredDays[date]);
-        if(incomingScore > currentScore){
-          recoveredDays[date] = record;
-          recoveredFrom[date] = key;
-        }
-      });
-    });
-
-    localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(recoveredDays));
-    localStorage.setItem('babyflow_recovery_sources', JSON.stringify(recoveredFrom));
-    localStorage.setItem('babyflow_storage_schema', '3');
-
-    // Recover settings from the newest non-empty versioned settings object.
-    if(!localStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY) === '{}'){
-      let bestSettings = null;
-      let bestVersion = -1;
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        const m = k && k.match(/^babyflow_pwa_v(\d+)$/);
-        if(!m) continue;
-        const raw = localStorage.getItem(k);
-        if(!raw || raw === '{}') continue;
-        const version = parseInt(m[1],10);
-        if(version > bestVersion){ bestVersion = version; bestSettings = raw; }
-      }
-      if(bestSettings) localStorage.setItem(STORAGE_KEY, bestSettings);
-    }
-
-    // Recover UI state from newest available version.
-    if(!localStorage.getItem(UI_STORAGE_KEY)){
-      let bestUi = null;
-      let bestVersion = -1;
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        const m = k && k.match(/^babyflow_pwa_v(\d+)_ui$/);
-        if(!m) continue;
-        const raw = localStorage.getItem(k);
-        if(!raw) continue;
-        const version = parseInt(m[1],10);
-        if(version > bestVersion){ bestVersion = version; bestUi = raw; }
-      }
-      if(bestUi) localStorage.setItem(UI_STORAGE_KEY, bestUi);
-    }
-  }catch(e){
-    console.error('BabyFlow exact storage recovery failed:', e);
-  }
-}
-
 function getSelectedDateStr(){
   return $('selectedDate')?.value || localDateStr();
 }
-function getActiveDayKey(){
-  return activeDayKey || getSelectedDateStr();
-}
 function getDaysStore(){
-  try{ return JSON.parse(localStorage.getItem(DAYS_STORAGE_KEY) || '{}') || {}; }catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY+'_days') || '{}') || {}; }catch(e){ return {}; }
 }
 function saveDaysStore(store){
-  localStorage.setItem(DAYS_STORAGE_KEY, JSON.stringify(store));
+  localStorage.setItem(STORAGE_KEY+'_days', JSON.stringify(store));
 }
-function saveActualsForDay(dayKey){
-  if(!dayKey) dayKey = getActiveDayKey();
+function loadStoredActuals(){
   const days = getDaysStore();
-  days[dayKey] = days[dayKey] || {};
-  days[dayKey].actuals = JSON.parse(JSON.stringify(actuals));
-  days[dayKey].activities = JSON.parse(JSON.stringify(dayActivities));
-  days[dayKey].projectedOverrides = JSON.parse(JSON.stringify(projectedOverrides));
-  days[dayKey].deletedEventKeys = JSON.parse(JSON.stringify(deletedEventKeys));
-  saveDaysStore(days);
-  localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(uiState));
-}
-function loadStoredActuals(dayKey){
-  dayKey = dayKey || getSelectedDateStr();
-  activeDayKey = dayKey;
-  const days = getDaysStore();
-  const day = days[dayKey] || {};
+  const day = days[getSelectedDateStr()] || {};
   Object.keys(actuals).forEach(k=>delete actuals[k]);
   Object.assign(actuals, day.actuals || {});
   projectedOverrides = day.projectedOverrides || {};
   dayActivities = Array.isArray(day.activities) ? day.activities : [];
   deletedEventKeys = Array.isArray(day.deletedEventKeys) ? day.deletedEventKeys : [];
-  try{ const rawUI=localStorage.getItem(UI_STORAGE_KEY); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
+  try{ const rawUI=localStorage.getItem(STORAGE_KEY+'_ui'); if(rawUI) Object.assign(uiState, JSON.parse(rawUI)||{}); }catch(e){}
 }
 function saveActuals(){
-  saveActualsForDay(getActiveDayKey());
+  const days = getDaysStore();
+  const key = getSelectedDateStr();
+  days[key] = days[key] || {};
+  days[key].actuals = JSON.parse(JSON.stringify(actuals));
+  days[key].activities = JSON.parse(JSON.stringify(dayActivities));
+  days[key].projectedOverrides = JSON.parse(JSON.stringify(projectedOverrides));
+  days[key].deletedEventKeys = JSON.parse(JSON.stringify(deletedEventKeys));
+  saveDaysStore(days);
+  localStorage.setItem(STORAGE_KEY+'_ui', JSON.stringify(uiState));
 }
 function clearActuals(){
   Object.keys(actuals).forEach(k=>delete actuals[k]);
@@ -611,7 +504,7 @@ function clearActuals(){
   projectedOverrides = {};
   deletedEventKeys = [];
   const days = getDaysStore();
-  const key = getActiveDayKey();
+  const key = getSelectedDateStr();
   if(days[key]){
     days[key].actuals = {};
     days[key].activities = [];
@@ -619,26 +512,9 @@ function clearActuals(){
     days[key].deletedEventKeys = [];
     saveDaysStore(days);
   }
-  localStorage.removeItem(UI_STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEY+'_ui');
   uiState.collapsePast = false;
   recalcFromKey = null;
-}
-
-function showBabyFlowRecoveryReport(){
-  try{
-    const days = getDaysStore();
-    const sources = JSON.parse(localStorage.getItem('babyflow_recovery_sources') || '{}');
-    const dates = Object.keys(days).sort();
-    const lines = dates.map(date => {
-      const record = days[date] || {};
-      const actualCount = record.actuals && typeof record.actuals === 'object' ? Object.keys(record.actuals).length : 0;
-      const activityCount = Array.isArray(record.activities) ? record.activities.length : 0;
-      return `${date}: ${actualCount} actuals, ${activityCount} activities${sources[date] ? ` — from ${sources[date]}` : ''}`;
-    });
-    alert(lines.length ? `Recovered BabyFlow dates:\n\n${lines.join('\n')}` : 'No saved BabyFlow dates were found in this app storage.');
-  }catch(e){
-    alert('Unable to read the recovery report.');
-  }
 }
 
 function updateConditionalFields(){
@@ -672,24 +548,15 @@ function loadState(){ try{ let s=JSON.parse(localStorage.getItem(STORAGE_KEY)||'
 function clearAll(){ ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='39-44'; $('laterWWRange').value='55-65'; $('firstNapRange').value='65-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='5'; if($('finalWakeFeedType')) $('finalWakeFeedType').value='regular'; $('bathLength').value='7'; $('routineLengthBath').value='6'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); updateRangeConversions(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll();  $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
 function goToToday(){
-  saveActualsForDay(getActiveDayKey());
   $('selectedDate').value = localDateStr();
-  loadStoredActuals($('selectedDate').value);
+  loadStoredActuals();
   generateTimeline();
 }
 function shiftDate(days){
-  saveActualsForDay(getActiveDayKey());
   const current = $('selectedDate').value ? new Date($('selectedDate').value + 'T00:00:00') : new Date();
   current.setDate(current.getDate() + days);
   const y=current.getFullYear(); const m=String(current.getMonth()+1).padStart(2,'0'); const day=String(current.getDate()).padStart(2,'0'); $('selectedDate').value = `${y}-${m}-${day}`;
-  loadStoredActuals($('selectedDate').value);
-  generateTimeline();
-}
-
-
-function handleSelectedDateChange(){
-  saveActualsForDay(getActiveDayKey());
-  loadStoredActuals(getSelectedDateStr());
+  loadStoredActuals();
   generateTimeline();
 }
 
@@ -705,21 +572,6 @@ function closeOpenEditPanelsOnOutsideTap(event){
   }
 }
 document.addEventListener('click', closeOpenEditPanelsOnOutsideTap);
-
-
-function flushBabyFlowState(){
-  try{ saveActuals(); }catch(e){}
-  try{
-    const ids=['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'];
-    let s={};
-    ids.forEach(id=>{ if($(id)) s[id]=$(id).value; });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-  }catch(e){}
-}
-window.addEventListener('pagehide', flushBabyFlowState);
-window.addEventListener('beforeunload', flushBabyFlowState);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') flushBabyFlowState(); });
-
 
 
 
@@ -1454,8 +1306,8 @@ function generateTimeline(){
   });
   dayActivities.forEach(a=>{
     const displayTitle = a.title === 'Swaddle and soothe' ? 'Swaddle & Soothe' : (a.title === 'Get dressed' ? 'Get dressed' : (a.title === 'Slowly waking up' ? 'Slowly waking' : a.title));
-    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off' || displayTitle === 'Burp') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
-    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed' || displayTitle === 'Top-Off' || displayTitle === 'Burp') ? 'feed' : 'routine';
+    const activityClass = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'activity-feed-green' : (displayTitle === 'Lotion & Jammies' ? 'nap-purple' : 'activity-blue');
+    const activityType = (displayTitle === 'Nightcap' || displayTitle === 'Digest' || displayTitle === 'Feed') ? 'feed' : 'routine';
     const aStart = a.start!=null ? a.start : a.time;
     const aEnd = a.end!=null ? a.end : null;
     const display = aEnd!=null ? `${ts(aStart)} – ${ts(aEnd)}` : ts(aStart);
@@ -1535,7 +1387,6 @@ function generateTimeline(){
 
   // Renumber feeds before rendering each card so titles/notes show correctly.
   renumberTimelineFeeds(renderItems);
-  annotateTopOffs(renderItems);
 
   const current = nowMinutes();
   window.__timelineEventMap = {};
@@ -1579,8 +1430,6 @@ function renumberTimelineFeeds(renderItems){
         title !== 'Night Cap' &&
         title !== 'Nightcap' &&
         title !== 'Digest' &&
-        title !== 'Top-Off' &&
-        title !== 'Burp' &&
         !key.startsWith('digest-');
     })
     .sort((a,b)=>(a.t??0)-(b.t??0));
@@ -1612,32 +1461,6 @@ function renumberTimelineFeeds(renderItems){
     }
 
     previousFeed = ev;
-  });
-}
-
-
-function annotateTopOffs(renderItems){
-  const timelineEvents = renderItems
-    .map(item => item.ev)
-    .filter(Boolean)
-    .sort((a,b)=>((a.time ?? a.start ?? 0) - (b.time ?? b.start ?? 0)));
-  timelineEvents.forEach(ev => {
-    if(String(ev.title || '') !== 'Top-Off') return;
-    const start = ev.time ?? ev.start ?? 0;
-    const previousFeed = timelineEvents
-      .filter(candidate => {
-        if(candidate === ev) return false;
-        const title = String(candidate.title || '');
-        const key = String(candidate.key || '');
-        if((candidate.time ?? candidate.start ?? 0) >= start) return false;
-        if(key.startsWith('digest-')) return false;
-        return candidate.type === 'feed' && title !== 'Digest' && title !== 'Top-Off' && title !== 'Burp';
-      })
-      .slice(-1)[0];
-    if(previousFeed){
-      const prevStart = previousFeed.time ?? previousFeed.start;
-      ev.note = `${pretty(start - prevStart)} since ${previousFeed.title}`;
-    }
   });
 }
 
@@ -1889,25 +1712,15 @@ function updateRangeConversions(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  migrateBabyFlowStorage(); restoreBabyFlowOnOpen(); updateRangeConversions(); const wt=$('wakeTime'); if(wt){ wt.addEventListener('change',()=>{ normalizeWakeTimeAMOnly(); saveState(); generateTimeline(); }); } updateRangeConversions();
+  restoreBabyFlowOnOpen(); updateRangeConversions(); const wt=$('wakeTime'); if(wt){ wt.addEventListener('change',()=>{ normalizeWakeTimeAMOnly(); saveState(); generateTimeline(); }); } updateRangeConversions();
 
   ['dreamFeedTime','wakeTime','firstWWRange','laterWWRange','firstNapRange','regularNapRange','longNapRange','feedRange','longNapFeedRange','maxNaps','finalWakeFeedType','bathLength','routineLengthBath','routineLengthNoBath','bedTopOffLength','fullFeedLength','digestLength','windDownLength','catNapLength','finalWWLength'].forEach(id=>{
     if($(id)) $(id).addEventListener('change',()=>{ saveState(); updateHints(); updateConditionalFields(); updateRangeConversions(); });
     if($(id)) $(id).addEventListener('input',()=>{ saveState(); updateHints(); updateConditionalFields(); updateRangeConversions(); });
   });
 
+  if($('selectedDate')) $('selectedDate').addEventListener('change',()=>{ saveState(); loadStoredActuals(); generateTimeline(); });
 });
-
-try{
-  const dateEl = $('selectedDate');
-  if(dateEl && !dateEl.dataset.selectedDateChangeHooked){
-    dateEl.dataset.selectedDateChangeHooked = '1';
-    dateEl.addEventListener('change', handleSelectedDateChange);
-  }
-  if(dateEl && !dateEl.value) dateEl.value = localDateStr();
-  activeDayKey = dateEl ? dateEl.value : localDateStr();
-}catch(e){}
-
 </script>
 
 <script>
