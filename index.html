@@ -246,6 +246,35 @@ details.advanced[open]{background:#fff}
 }
 
 
+/* v182 live activity timer */
+.live-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:7px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#ecfdf5;
+  color:#166534;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.04em;
+}
+.live-badge::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.14);
+}
+.activity-elapsed{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:3px;
+  font-weight:700;
+}
+
 /* v159 settings organization */
 .settings-section{
   border:1px solid var(--border);
@@ -397,6 +426,7 @@ details.advanced[open]{background:#fff}
 <option value="Errands">Errands</option>
 <option value="Feed">Feed</option>
 <option value="Get dressed">Get dressed</option>
+<option value="Held">Held</option>
 <option value="Held by fam/friends">Held by fam/friends</option>
 <option value="Load up car">Load up car</option>
 <option value="Lotion & Jammies">Lotion & Jammies</option>
@@ -1230,11 +1260,28 @@ function toggleActivityPanel(){
   const el = $('activityPanel');
   if(el) el.classList.toggle('hidden');
 }
+function stopOpenActivitiesAt(endTime, exceptId){
+  dayActivities.forEach(a=>{
+    const start = a.start!=null ? a.start : a.time;
+    if(a.id !== exceptId && a.end==null && start!=null && start <= endTime){
+      a.end = Math.max(start, endTime);
+      if(actuals[a.id]){
+        actuals[a.id].start = start;
+        actuals[a.id].time = start;
+        actuals[a.id].end = a.end;
+      }
+    }
+  });
+}
+
 function addActivity(){
   const title = $('activityType').value;
   const time = tm($('activityTime').value);
   if(!title || time==null) return;
-  dayActivities.push({id:`activity-${Date.now()}-${Math.floor(Math.random()*1000)}`, title, time, start:time, end:null});
+  stopOpenActivitiesAt(time);
+  const id = `activity-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+  dayActivities.push({id, title, time, start:time, end:null});
+  actuals[id] = {type:'routine', time, start:time};
   saveActuals();
   generateTimeline();
 }
@@ -1331,6 +1378,37 @@ function applyProjectedOverride(ev){
   return ev;
 }
 
+function isLiveActivity(ev){
+  if(!ev || !String(ev.key || '').startsWith('activity-')) return false;
+  if(getSelectedDateStr() !== localDateStr()) return false;
+  const activity = dayActivities.find(a=>a.id===ev.key);
+  if(!activity || activity.end!=null) return false;
+  const start = activity.start!=null ? activity.start : activity.time;
+  if(start==null || start > nowMinutes()) return false;
+  return !dayActivities.some(a=>{
+    if(a.id===activity.id) return false;
+    const otherStart = a.start!=null ? a.start : a.time;
+    return otherStart!=null && otherStart > start && otherStart <= nowMinutes();
+  });
+}
+
+function liveElapsedText(startMinutes){
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date().setHours(Math.floor(startMinutes/60), startMinutes%60, 0, 0)) / 1000));
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+  if(hours) return `${hours} hr${hours===1?'':'s'} ${minutes} min${minutes===1?'':'s'}`;
+  if(minutes) return `${minutes} min${minutes===1?'':'s'} ${String(seconds).padStart(2,'0')} sec`;
+  return `${seconds} sec`;
+}
+
+function refreshLiveActivityTimers(){
+  document.querySelectorAll('[data-live-activity-start]').forEach(el=>{
+    const start = Number(el.getAttribute('data-live-activity-start'));
+    if(Number.isFinite(start)) el.textContent = `⏱ ${liveElapsedText(start)}`;
+  });
+}
+
 function renderTimeControl(ev){
   const actual = actuals[ev.key];
   const hasActual=!!(actual && (actual.time!=null || actual.start!=null || actual.end!=null));
@@ -1344,6 +1422,11 @@ function renderTimeControl(ev){
   const shown = hasActual
     ? (hasActualRange ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(hasActualSingle ? actual.time : actual.start))
     : ev.displayTime;
+  const liveActivity = isLiveActivity(ev);
+  const activityStart = ev.start!=null ? ev.start : ev.time;
+  const completedActivityDuration = String(ev.key || '').startsWith('activity-') && ev.end!=null && activityStart!=null
+    ? pretty(Math.max(0, ev.end - activityStart))
+    : '';
 
   let panel='';
   if(editableTypes.has(ev.type) || (ev.key && String(ev.key).startsWith('activity-'))){
@@ -1383,13 +1466,14 @@ function renderTimeControl(ev){
 
   return `<div class="item ${itemClass}${stateClasses}">
     <div class="item-top">
-      <div><b>${ev.title}</b></div>
+      <div><b>${ev.title}</b>${liveActivity?`<div class="live-badge">LIVE</div>`:''}</div>
       <div class="item-right">
         <span class="time-btn-wrap">
           <button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>
           <span class="status-dot ${dotClass}" onclick="quickToggleActual('${ev.key}')" title="${hasActual ? 'Marked actual — tap to clear' : 'Tap to mark actual'}"></span>
         </span>
-        ${(ev.durationText && ev.type!=='feed')?`<div class="item-duration-right">(${ev.durationText})</div>`:''}
+        ${liveActivity?`<div class="activity-elapsed" data-live-activity-start="${activityStart}">⏱ ${liveElapsedText(activityStart)}</div>`:''}
+        ${completedActivityDuration?`<div class="item-duration-right">(${completedActivityDuration})</div>`:((ev.durationText && ev.type!=='feed')?`<div class="item-duration-right">(${ev.durationText})</div>`:'')}
       </div>
     </div>
     ${ev.note?`<div class="item-note">${ev.note}</div>`:''}
@@ -2254,6 +2338,8 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(err => console.log('Service worker registration failed:', err));
   });
 }
+
+setInterval(refreshLiveActivityTimers, 1000);
 </script>
 
 </body></html>
