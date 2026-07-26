@@ -364,10 +364,11 @@ details.advanced[open]{background:#fff}
   <div class="row">
     <button class="secondary" onclick="exportBabyFlowBackup()">Export backup</button>
     <button class="secondary" onclick="document.getElementById('babyFlowImportFile').click()">Import backup</button>
-    <button class="secondary" onclick="restoreLatestBabyFlowBackup()">Restore latest backup</button>
+    <button class="secondary" onclick="toggleBackupHistory()">Backup history</button>
     <button class="secondary" onclick="showBabyFlowDiagnostics()">Storage diagnostics</button>
   </div>
   <input id="babyFlowImportFile" type="file" accept=".json,application/json" style="display:none" onchange="importBabyFlowBackup(event)">
+  <div id="backupHistoryPanel" style="display:none;margin-top:10px"></div>
   <div class="hint" id="backupStatus">Automatic rolling backups are enabled.</div>
 </div>
 
@@ -425,8 +426,8 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=3;
-const MAX_AUTOMATIC_BACKUPS=10;
+const STORAGE_SCHEMA_VERSION=4;
+const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
 let dayActivities = [];
@@ -602,6 +603,8 @@ function createAutomaticBackup(reason, force){
     localStorage.setItem(BACKUPS_STORAGE_KEY, JSON.stringify(backups.slice(0, MAX_AUTOMATIC_BACKUPS)));
     const el = $('backupStatus');
     if(el) el.textContent = 'Automatic backup saved.';
+    const panel = $('backupHistoryPanel');
+    if(panel && panel.style.display !== 'none') renderBackupHistory();
   }catch(e){
     console.error('BabyFlow backup failed:', e);
   }
@@ -617,7 +620,45 @@ function atomicWriteJSON(key, value){
   localStorage.removeItem(tempKey);
 }
 
+
+function createPreUpdateRollback(){
+  try{
+    const currentSchema = Number(localStorage.getItem(STORAGE_SCHEMA_KEY) || 0);
+    if(currentSchema >= STORAGE_SCHEMA_VERSION) return;
+    const snapshot = getBabyFlowSnapshot();
+    snapshot.reason = `Pre-update rollback for schema ${STORAGE_SCHEMA_VERSION}`;
+    localStorage.setItem('babyflow_update_rollback', JSON.stringify(snapshot));
+  }catch(e){
+    console.error('Could not create pre-update rollback:', e);
+  }
+}
+
+function verifyStorageAfterUpdate(){
+  try{
+    const rollback = safeParseJSON(localStorage.getItem('babyflow_update_rollback'), null);
+    if(!rollback) return;
+
+    const current = getBabyFlowSnapshot();
+    const rollbackScore = snapshotScore(rollback);
+    const currentScore = snapshotScore(current);
+
+    if(rollbackScore > 0 && currentScore === 0){
+      atomicWriteJSON(DAYS_STORAGE_KEY, rollback.days || {});
+      atomicWriteJSON(STORAGE_KEY, rollback.settings || {});
+      atomicWriteJSON(UI_STORAGE_KEY, rollback.ui || {});
+      localStorage.setItem('babyflow_last_update_status', 'rolled_back');
+      return;
+    }
+
+    localStorage.setItem('babyflow_last_update_status', 'verified');
+    localStorage.removeItem('babyflow_update_rollback');
+  }catch(e){
+    console.error('Storage verification failed:', e);
+  }
+}
+
 function migrateBabyFlowStorage(){
+  createPreUpdateRollback();
   try{
     // Capture everything already on the device before changing any key.
     if(!localStorage.getItem('babyflow_pre_migration_snapshot')){
@@ -654,6 +695,7 @@ function migrateBabyFlowStorage(){
 
     localStorage.setItem(STORAGE_SCHEMA_KEY, String(STORAGE_SCHEMA_VERSION));
     createAutomaticBackup('Before/after storage migration', true);
+    verifyStorageAfterUpdate();
   }catch(e){
     console.error('BabyFlow migration failed:', e);
     const status = $('backupStatus');
@@ -682,6 +724,7 @@ function saveDaysStore(store){
 
   createAutomaticBackup('Before day save');
   atomicWriteJSON(DAYS_STORAGE_KEY, store || {});
+  createAutomaticBackup('After day save');
 }
 
 function saveActualsForDay(dayKey){
@@ -744,29 +787,44 @@ function clearActuals(){
   recalcFromKey = null;
 }
 
-function exportBabyFlowBackup(){
+async function exportBabyFlowBackup(){
   try{
     saveState();
     createAutomaticBackup('Manual export', true);
     const snapshot = getBabyFlowSnapshot();
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type:'application/json'});
+    const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+    const filename = `BabyFlow_Backup_${stamp}.json`;
+    const json = JSON.stringify(snapshot, null, 2);
+    const file = new File([json], filename, {type:'application/json'});
+
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({
+        title:'BabyFlow Backup',
+        text:'BabyFlow backup file',
+        files:[file]
+      });
+      const el = $('backupStatus');
+      if(el) el.textContent = 'Backup shared successfully.';
+      return;
+    }
+
+    const blob = new Blob([json], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const stamp = new Date().toISOString().replace(/[:.]/g,'-');
     a.href = url;
-    a.download = `BabyFlow_Backup_${stamp}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
     const el = $('backupStatus');
-    if(el) el.textContent = 'Backup exported. Keep the downloaded file somewhere safe.';
+    if(el) el.textContent = 'Backup downloaded. Save the file somewhere safe.';
   }catch(e){
+    if(e && e.name === 'AbortError') return;
     alert('BabyFlow could not export the backup.');
     console.error(e);
   }
 }
-
 function validateImportedBackup(data){
   return data &&
     data.format === 'BabyFlowBackup' &&
@@ -798,23 +856,105 @@ function importBabyFlowBackup(event){
   reader.readAsText(file);
 }
 
-function restoreLatestBabyFlowBackup(){
+function formatBackupDate(iso){
+  try{
+    return new Date(iso).toLocaleString([], {
+      month:'short', day:'numeric', year:'numeric',
+      hour:'numeric', minute:'2-digit'
+    });
+  }catch(e){
+    return iso || 'Unknown time';
+  }
+}
+
+function toggleBackupHistory(){
+  const panel = $('backupHistoryPanel');
+  if(!panel) return;
+  if(panel.style.display === 'none'){
+    renderBackupHistory();
+    panel.style.display = 'block';
+  }else{
+    panel.style.display = 'none';
+  }
+}
+
+function renderBackupHistory(){
+  const panel = $('backupHistoryPanel');
+  if(!panel) return;
+  const backups = safeParseJSON(localStorage.getItem(BACKUPS_STORAGE_KEY), []);
+  if(!backups.length){
+    panel.innerHTML = '<div class="hint">No automatic backups are available yet.</div>';
+    return;
+  }
+
+  panel.innerHTML = backups.map((backup,index)=>{
+    const dates = Object.keys(backup.days || {}).length;
+    const reason = backup.reason || 'Automatic backup';
+    return `
+      <div style="border:1px solid #d8d8d8;border-radius:12px;padding:10px;margin:8px 0;background:#fff">
+        <div style="font-weight:700">${formatBackupDate(backup.createdAt)}</div>
+        <div class="hint" style="margin:3px 0 8px">${reason} • ${dates} saved day${dates===1?'':'s'}</div>
+        <div class="row" style="margin:0">
+          <button class="secondary" onclick="restoreBabyFlowBackup(${index})">Restore</button>
+          <button class="secondary" onclick="exportStoredBabyFlowBackup(${index})">Export this backup</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function restoreBabyFlowBackup(index){
   try{
     const backups = safeParseJSON(localStorage.getItem(BACKUPS_STORAGE_KEY), []);
-    if(!backups.length){
-      alert('No automatic backups are available yet.');
+    const selected = backups[index];
+    if(!selected){
+      alert('That backup is no longer available.');
       return;
     }
-    const latest = backups[0];
-    if(!confirm(`Restore the latest backup from ${new Date(latest.createdAt).toLocaleString()}?`)) return;
-    createAutomaticBackup('Before restoring latest backup', true);
-    atomicWriteJSON(DAYS_STORAGE_KEY, latest.days || {});
-    atomicWriteJSON(STORAGE_KEY, latest.settings || {});
-    atomicWriteJSON(UI_STORAGE_KEY, latest.ui || {});
+    if(!confirm(`Restore BabyFlow to ${formatBackupDate(selected.createdAt)}?`)) return;
+
+    const rollback = getBabyFlowSnapshot();
+    rollback.reason = 'Automatic rollback before restore';
+    backups.unshift(rollback);
+    localStorage.setItem(BACKUPS_STORAGE_KEY, JSON.stringify(backups.slice(0, MAX_AUTOMATIC_BACKUPS)));
+
+    atomicWriteJSON(DAYS_STORAGE_KEY, selected.days || {});
+    atomicWriteJSON(STORAGE_KEY, selected.settings || {});
+    atomicWriteJSON(UI_STORAGE_KEY, selected.ui || {});
     alert('Backup restored. BabyFlow will reload now.');
     location.reload();
   }catch(e){
-    alert('BabyFlow could not restore the backup.');
+    alert('BabyFlow could not restore that backup.');
+    console.error(e);
+  }
+}
+
+async function exportStoredBabyFlowBackup(index){
+  try{
+    const backups = safeParseJSON(localStorage.getItem(BACKUPS_STORAGE_KEY), []);
+    const selected = backups[index];
+    if(!selected) throw new Error('Backup unavailable');
+    const stamp = (selected.createdAt || new Date().toISOString()).replace(/[:.]/g,'-');
+    const filename = `BabyFlow_Backup_${stamp}.json`;
+    const json = JSON.stringify(selected, null, 2);
+    const file = new File([json], filename, {type:'application/json'});
+
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({title:'BabyFlow Backup', files:[file]});
+      return;
+    }
+
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){
+    if(e && e.name === 'AbortError') return;
+    alert('BabyFlow could not export that backup.');
     console.error(e);
   }
 }
@@ -832,7 +972,8 @@ function showBabyFlowDiagnostics(){
     `Dates with logged data: ${meaningfulDates.length}`,
     meaningfulDates.length ? `Logged dates: ${meaningfulDates.join(', ')}` : 'Logged dates: none',
     `Automatic backups: ${backups.length}`,
-    `Permanent days key: ${DAYS_STORAGE_KEY}`
+    `Permanent days key: ${DAYS_STORAGE_KEY}`,
+    `Last update check: ${localStorage.getItem('babyflow_last_update_status') || 'not recorded'}`
   ].join('\n');
   alert(message);
 }
