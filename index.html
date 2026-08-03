@@ -246,7 +246,7 @@ details.advanced[open]{background:#fff}
 }
 
 
-/* v182 live activity timer */
+/* v183 corrected live activity timer */
 .live-badge{
   display:inline-flex;
   align-items:center;
@@ -1274,14 +1274,28 @@ function stopOpenActivitiesAt(endTime, exceptId){
   });
 }
 
+const TIMED_ACTIVITY_TITLES = new Set([
+  'Babywear (Chores)','Babywear (Errands)','Babywear (Out)','Babywear (Pack)',
+  'Cuddles','Errands','Held','Held by fam/friends','Nursery Rhymes','Playtime',
+  'Pool','Story time','Sunshine','Sunshine & Stretches','Swing','Swing to sleep',
+  'Tummy time','Walk'
+]);
+function isTimedActivityTitle(title){
+  return TIMED_ACTIVITY_TITLES.has(String(title || ''));
+}
+
 function addActivity(){
   const title = $('activityType').value;
   const time = tm($('activityTime').value);
   if(!title || time==null) return;
   stopOpenActivitiesAt(time);
   const id = `activity-${Date.now()}-${Math.floor(Math.random()*1000)}`;
-  dayActivities.push({id, title, time, start:time, end:null});
-  actuals[id] = {type:'routine', time, start:time};
+  const timed = isTimedActivityTitle(title);
+  const end = timed ? null : time;
+  dayActivities.push({id, title, time, start:time, end});
+  actuals[id] = timed
+    ? {type:'routine', time, start:time}
+    : {type:'routine', time, start:time, end:time};
   saveActuals();
   generateTimeline();
 }
@@ -1382,7 +1396,7 @@ function isLiveActivity(ev){
   if(!ev || !String(ev.key || '').startsWith('activity-')) return false;
   if(getSelectedDateStr() !== localDateStr()) return false;
   const activity = dayActivities.find(a=>a.id===ev.key);
-  if(!activity || activity.end!=null) return false;
+  if(!activity || activity.end!=null || !isTimedActivityTitle(activity.title)) return false;
   const start = activity.start!=null ? activity.start : activity.time;
   if(start==null || start > nowMinutes()) return false;
   return !dayActivities.some(a=>{
@@ -2255,7 +2269,14 @@ function saveBabyFlowBeforeClose(){
 
 window.addEventListener('pagehide', saveBabyFlowBeforeClose);
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'hidden') saveBabyFlowBeforeClose();
+  if(document.visibilityState === 'hidden'){
+    saveBabyFlowBeforeClose();
+  } else {
+    try{ generateTimeline(); refreshLiveActivityTimers(); }catch(e){}
+  }
+});
+window.addEventListener('focus', () => {
+  try{ generateTimeline(); refreshLiveActivityTimers(); }catch(e){}
 });
 
 
@@ -2340,6 +2361,7 @@ if ('serviceWorker' in navigator) {
 }
 
 setInterval(refreshLiveActivityTimers, 1000);
+setInterval(()=>{ try{ generateTimeline(); }catch(e){} }, 60000);
 </script>
 
 </body></html>
