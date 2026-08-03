@@ -299,6 +299,8 @@ details.advanced[open]{background:#fff}
 }
 .settings-section .field:last-child{margin-bottom:0}
 
+
+.activity-remaining{font-size:12px;color:#475569;margin-top:4px;white-space:nowrap}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -433,6 +435,7 @@ details.advanced[open]{background:#fff}
 <option value="Nightcap">Nightcap</option>
 <option value="Nursery Rhymes">Nursery Rhymes</option>
 <option value="Outfit change">Outfit change</option>
+<option value="Play with dogs">Play with dogs</option>
 <option value="Playtime">Playtime</option>
 <option value="Pool">Pool</option>
 <option value="Slowly waking">Slowly waking</option>
@@ -456,7 +459,7 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=4;
+const STORAGE_SCHEMA_VERSION=5;
 const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
@@ -1276,7 +1279,7 @@ function stopOpenActivitiesAt(endTime, exceptId){
 
 const TIMED_ACTIVITY_TITLES = new Set([
   'Babywear (Chores)','Babywear (Errands)','Babywear (Out)','Babywear (Pack)',
-  'Cuddles','Errands','Held','Held by fam/friends','Nursery Rhymes','Playtime',
+  'Cuddles','Errands','Held','Held by fam/friends','Nursery Rhymes','Playtime','Play with dogs',
   'Pool','Story time','Sunshine','Sunshine & Stretches','Swing','Swing to sleep',
   'Tummy time','Walk'
 ]);
@@ -1392,18 +1395,63 @@ function applyProjectedOverride(ev){
   return ev;
 }
 
-function isLiveActivity(ev){
-  if(!ev || !String(ev.key || '').startsWith('activity-')) return false;
-  if(getSelectedDateStr() !== localDateStr()) return false;
-  const activity = dayActivities.find(a=>a.id===ev.key);
-  if(!activity || activity.end!=null || !isTimedActivityTitle(activity.title)) return false;
-  const start = activity.start!=null ? activity.start : activity.time;
-  if(start==null || start > nowMinutes()) return false;
-  return !dayActivities.some(a=>{
-    if(a.id===activity.id) return false;
-    const otherStart = a.start!=null ? a.start : a.time;
-    return otherStart!=null && otherStart > start && otherStart <= nowMinutes();
-  });
+function getEventStart(ev){
+  if(!ev) return null;
+  const actual = actuals[ev.key];
+  if(actual){
+    if(actual.start!=null) return actual.start;
+    if(actual.time!=null) return actual.time;
+  }
+  return ev.start!=null ? ev.start : ev.time;
+}
+
+function getEventEnd(ev){
+  if(!ev) return null;
+  const actual = actuals[ev.key];
+  if(actual && actual.end!=null) return actual.end;
+  return ev.end!=null ? ev.end : null;
+}
+
+function findCurrentOpenCustomActivityKey(current){
+  if(getSelectedDateStr() !== localDateStr()) return null;
+  const candidates = dayActivities
+    .filter(a=>{
+      const start = a.start!=null ? a.start : a.time;
+      return start!=null && start<=current && a.end==null && isTimedActivityTitle(a.title);
+    })
+    .sort((a,b)=>(b.start??b.time)-(a.start??a.time));
+  return candidates.length ? candidates[0].id : null;
+}
+
+function determineLiveTimelineKey(renderItems, current){
+  if(getSelectedDateStr() !== localDateStr()) return null;
+
+  // A currently running custom activity takes priority over its parent wake window/item.
+  const openCustomKey = findCurrentOpenCustomActivityKey(current);
+  if(openCustomKey) return openCustomKey;
+
+  const candidates = renderItems
+    .map(item=>item.ev)
+    .filter(Boolean)
+    .filter(ev=>{
+      const start = getEventStart(ev);
+      const end = getEventEnd(ev);
+      return start!=null && end!=null && end>start && current>=start && current<end;
+    })
+    .sort((a,b)=>{
+      const aStart = getEventStart(a) ?? -1;
+      const bStart = getEventStart(b) ?? -1;
+      if(bStart !== aStart) return bStart-aStart;
+      const aDur = (getEventEnd(a)??aStart)-aStart;
+      const bDur = (getEventEnd(b)??bStart)-bStart;
+      return aDur-bDur;
+    });
+
+  return candidates.length ? candidates[0].key : null;
+}
+
+function isLiveTimelineItem(ev){
+  return !!ev && window.__liveTimelineKey === ev.key && getSelectedDateStr() === localDateStr();
 }
 
 function liveElapsedText(startMinutes){
@@ -1416,13 +1464,27 @@ function liveElapsedText(startMinutes){
   return `${seconds} sec`;
 }
 
-function refreshLiveActivityTimers(){
-  document.querySelectorAll('[data-live-activity-start]').forEach(el=>{
-    const start = Number(el.getAttribute('data-live-activity-start'));
-    if(Number.isFinite(start)) el.textContent = `⏱ ${liveElapsedText(start)}`;
-  });
+function liveRemainingText(endMinutes){
+  if(endMinutes==null) return '';
+  const remainingSeconds = Math.max(0, Math.ceil((new Date().setHours(Math.floor(endMinutes/60), endMinutes%60, 0, 0) - Date.now()) / 1000));
+  const hours = Math.floor(remainingSeconds / 3600);
+  const minutes = Math.floor((remainingSeconds % 3600) / 60);
+  const seconds = remainingSeconds % 60;
+  if(hours) return `${hours} hr${hours===1?'':'s'} ${minutes} min${minutes===1?'':'s'}`;
+  if(minutes) return `${minutes} min${minutes===1?'':'s'} ${String(seconds).padStart(2,'0')} sec`;
+  return `${seconds} sec`;
 }
 
+function refreshLiveTimelineTimers(){
+  document.querySelectorAll('[data-live-start]').forEach(el=>{
+    const start = Number(el.getAttribute('data-live-start'));
+    if(Number.isFinite(start)) el.textContent = `⏱ ${liveElapsedText(start)} elapsed`;
+  });
+  document.querySelectorAll('[data-live-end]').forEach(el=>{
+    const end = Number(el.getAttribute('data-live-end'));
+    if(Number.isFinite(end)) el.textContent = `⏳ ${liveRemainingText(end)} remaining`;
+  });
+}
 function renderTimeControl(ev){
   const actual = actuals[ev.key];
   const hasActual=!!(actual && (actual.time!=null || actual.start!=null || actual.end!=null));
@@ -1436,8 +1498,9 @@ function renderTimeControl(ev){
   const shown = hasActual
     ? (hasActualRange ? `${ts(actual.start)} – ${ts(actual.end)}` : ts(hasActualSingle ? actual.time : actual.start))
     : ev.displayTime;
-  const liveActivity = isLiveActivity(ev);
-  const activityStart = ev.start!=null ? ev.start : ev.time;
+  const liveActivity = isLiveTimelineItem(ev);
+  const activityStart = getEventStart(ev);
+  const activityEnd = getEventEnd(ev);
   const completedActivityDuration = String(ev.key || '').startsWith('activity-') && ev.end!=null && activityStart!=null
     ? pretty(Math.max(0, ev.end - activityStart))
     : '';
@@ -1480,13 +1543,13 @@ function renderTimeControl(ev){
 
   return `<div class="item ${itemClass}${stateClasses}">
     <div class="item-top">
-      <div><b>${ev.title}</b>${liveActivity?`<div class="live-badge">LIVE</div>`:''}</div>
+      <div><b>${ev.title}</b>${liveActivity?`<div class="live-badge">LIVE</div><div class="item-note">Started ${ts(activityStart)}</div>`:''}</div>
       <div class="item-right">
         <span class="time-btn-wrap">
           <button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>
           <span class="status-dot ${dotClass}" onclick="quickToggleActual('${ev.key}')" title="${hasActual ? 'Marked actual — tap to clear' : 'Tap to mark actual'}"></span>
         </span>
-        ${liveActivity?`<div class="activity-elapsed" data-live-activity-start="${activityStart}">⏱ ${liveElapsedText(activityStart)}</div>`:''}
+        ${liveActivity?`<div class="activity-elapsed" data-live-start="${activityStart}">⏱ ${liveElapsedText(activityStart)} elapsed</div>${activityEnd!=null?`<div class="activity-remaining" data-live-end="${activityEnd}">⏳ ${liveRemainingText(activityEnd)} remaining</div>`:''}`:''}
         ${completedActivityDuration?`<div class="item-duration-right">(${completedActivityDuration})</div>`:((ev.durationText && ev.type!=='feed')?`<div class="item-duration-right">(${ev.durationText})</div>`:'')}
       </div>
     </div>
@@ -1974,21 +2037,21 @@ function generateTimeline(){
   annotateTopOffs(renderItems);
 
   const current = nowMinutes();
+  renderItems.sort((a,b)=>a.t-b.t);
+  window.__liveTimelineKey = determineLiveTimelineKey(renderItems, current);
   window.__timelineEventMap = {};
   window.__orderedTimelineKeys = [];
   renderItems.forEach(item => {
     if(item.ev){
       window.__timelineEventMap[item.ev.key] = item.ev;
       window.__orderedTimelineKeys.push(item.ev.key);
-      const start = item.ev.time ?? item.ev.start;
-      const end = item.ev.end ?? start;
-      item.ev.isCurrent = end > start ? (current >= start && current < end) : current === start;
-      item.ev.isPast = end <= current && !item.ev.isCurrent;
+      const start = getEventStart(item.ev);
+      const end = getEventEnd(item.ev) ?? start;
+      item.ev.isCurrent = item.ev.key === window.__liveTimelineKey;
+      item.ev.isPast = end!=null && end <= current && !item.ev.isCurrent;
       item.html = renderTimeControl(item.ev);
     }
   });
-
-  renderItems.sort((a,b)=>a.t-b.t);
   const visibleItems = [];
   let collapsedCount = 0;
   for (const item of renderItems){
@@ -2360,8 +2423,14 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-setInterval(refreshLiveActivityTimers, 1000);
+setInterval(refreshLiveTimelineTimers, 1000);
 setInterval(()=>{ try{ generateTimeline(); }catch(e){} }, 60000);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible'){
+    try{ generateTimeline(); refreshLiveTimelineTimers(); }catch(e){}
+  }
+});
+window.addEventListener('focus', ()=>{ try{ generateTimeline(); refreshLiveTimelineTimers(); }catch(e){} });
 </script>
 
 </body></html>
