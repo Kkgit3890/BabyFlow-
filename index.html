@@ -459,7 +459,7 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=6;
+const STORAGE_SCHEMA_VERSION=7;
 const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
@@ -1333,8 +1333,11 @@ function quickToggleActual(key){
 ));
   if(String(key).startsWith('activity-')){
     const s = ev.start!=null ? ev.start : ev.time;
-    if(ev.end!=null) actuals[key] = {type:ev.type, start:s, end:ev.end, time:s};
-    else actuals[key] = {type:ev.type, time:s};
+    if(hasUserEnteredEnd(ev) && ev.end!=null){
+      actuals[key] = {type:ev.type, start:s, end:ev.end, time:s};
+    } else {
+      actuals[key] = {type:ev.type, time:s};
+    }
   } else if(isRangeEvent){
     const s = ev.start!=null ? ev.start : ev.time;
     if(ev.optionalEnd && ev.end==null){
