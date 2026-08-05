@@ -459,7 +459,7 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=5;
+const STORAGE_SCHEMA_VERSION=6;
 const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
@@ -1412,44 +1412,63 @@ function getEventEnd(ev){
   return ev.end!=null ? ev.end : null;
 }
 
-function findCurrentOpenCustomActivityKey(current){
-  if(getSelectedDateStr() !== localDateStr()) return null;
-  const candidates = dayActivities
-    .filter(a=>{
-      const start = a.start!=null ? a.start : a.time;
-      return start!=null && start<=current && a.end==null && isTimedActivityTitle(a.title);
-    })
-    .sort((a,b)=>(b.start??b.time)-(a.start??a.time));
-  return candidates.length ? candidates[0].id : null;
+function getNextTimelineStartAfter(renderItems, startMinutes, excludeKey){
+  const starts = renderItems
+    .map(item=>item.ev)
+    .filter(Boolean)
+    .filter(ev=>ev.key !== excludeKey)
+    .map(ev=>getEventStart(ev))
+    .filter(v=>v!=null && v>startMinutes)
+    .sort((a,b)=>a-b);
+  return starts.length ? starts[0] : null;
+}
+
+function getEffectiveEventEnd(ev, renderItems){
+  const explicitEnd = getEventEnd(ev);
+  if(explicitEnd!=null) return explicitEnd;
+
+  if(ev && String(ev.key||'').startsWith('activity-')){
+    const start = getEventStart(ev);
+    if(start==null) return null;
+    return getNextTimelineStartAfter(renderItems, start, ev.key);
+  }
+
+  return null;
 }
 
 function determineLiveTimelineKey(renderItems, current){
   if(getSelectedDateStr() !== localDateStr()) return null;
-
-  // A currently running custom activity takes priority over its parent wake window/item.
-  const openCustomKey = findCurrentOpenCustomActivityKey(current);
-  if(openCustomKey) return openCustomKey;
 
   const candidates = renderItems
     .map(item=>item.ev)
     .filter(Boolean)
     .filter(ev=>{
       const start = getEventStart(ev);
-      const end = getEventEnd(ev);
-      return start!=null && end!=null && end>start && current>=start && current<end;
+      const end = getEffectiveEventEnd(ev, renderItems);
+      return start!=null && end!=null && current>=start && current<end;
     })
     .sort((a,b)=>{
+      const aCustom = String(a.key||'').startsWith('activity-') ? 1 : 0;
+      const bCustom = String(b.key||'').startsWith('activity-') ? 1 : 0;
+      if(aCustom !== bCustom) return bCustom-aCustom;
       const aStart = getEventStart(a) ?? -1;
       const bStart = getEventStart(b) ?? -1;
       if(bStart !== aStart) return bStart-aStart;
-      const aDur = (getEventEnd(a)??aStart)-aStart;
-      const bDur = (getEventEnd(b)??bStart)-bStart;
-      return aDur-bDur;
+      return 0;
     });
 
   return candidates.length ? candidates[0].key : null;
 }
 
+function hasUserEnteredEnd(ev){
+  if(!ev) return false;
+  const actual = actuals[ev.key];
+  if(actual && actual.end!=null) return true;
+  const projected = projectedOverrides && projectedOverrides[ev.key];
+  if(projected && projected.end!=null) return true;
+  const activity = dayActivities.find(a=>a.id===ev.key);
+  return !!(activity && activity.end!=null);
+}
 function isLiveTimelineItem(ev){
   return !!ev && window.__liveTimelineKey === ev.key && getSelectedDateStr() === localDateStr();
 }
@@ -1500,7 +1519,9 @@ function renderTimeControl(ev){
     : ev.displayTime;
   const liveActivity = isLiveTimelineItem(ev);
   const activityStart = getEventStart(ev);
-  const activityEnd = getEventEnd(ev);
+  const explicitActivityEnd = getEventEnd(ev);
+  const activityEnd = getEffectiveEventEnd(ev, window.__currentRenderItems || []);
+  const showRemaining = hasUserEnteredEnd(ev) && explicitActivityEnd!=null;
   const completedActivityDuration = String(ev.key || '').startsWith('activity-') && ev.end!=null && activityStart!=null
     ? pretty(Math.max(0, ev.end - activityStart))
     : '';
@@ -1549,7 +1570,7 @@ function renderTimeControl(ev){
           <button class="time-btn" onclick="togglePanel('${ev.key}')">${shown}</button>
           <span class="status-dot ${dotClass}" onclick="quickToggleActual('${ev.key}')" title="${hasActual ? 'Marked actual — tap to clear' : 'Tap to mark actual'}"></span>
         </span>
-        ${liveActivity?`<div class="activity-elapsed" data-live-start="${activityStart}">⏱ ${liveElapsedText(activityStart)} elapsed</div>${activityEnd!=null?`<div class="activity-remaining" data-live-end="${activityEnd}">⏳ ${liveRemainingText(activityEnd)} remaining</div>`:''}`:''}
+        ${liveActivity?`<div class="activity-elapsed" data-live-start="${activityStart}">⏱ ${liveElapsedText(activityStart)} elapsed</div>${showRemaining?`<div class="activity-remaining" data-live-end="${explicitActivityEnd}">⏳ ${liveRemainingText(explicitActivityEnd)} remaining</div>`:''}`:''}
         ${completedActivityDuration?`<div class="item-duration-right">(${completedActivityDuration})</div>`:((ev.durationText && ev.type!=='feed')?`<div class="item-duration-right">(${ev.durationText})</div>`:'')}
       </div>
     </div>
@@ -2038,6 +2059,7 @@ function generateTimeline(){
 
   const current = nowMinutes();
   renderItems.sort((a,b)=>a.t-b.t);
+  window.__currentRenderItems = renderItems;
   window.__liveTimelineKey = determineLiveTimelineKey(renderItems, current);
   window.__timelineEventMap = {};
   window.__orderedTimelineKeys = [];
@@ -2046,7 +2068,7 @@ function generateTimeline(){
       window.__timelineEventMap[item.ev.key] = item.ev;
       window.__orderedTimelineKeys.push(item.ev.key);
       const start = getEventStart(item.ev);
-      const end = getEventEnd(item.ev) ?? start;
+      const end = getEffectiveEventEnd(item.ev, renderItems) ?? start;
       item.ev.isCurrent = item.ev.key === window.__liveTimelineKey;
       item.ev.isPast = end!=null && end <= current && !item.ev.isCurrent;
       item.html = renderTimeControl(item.ev);
