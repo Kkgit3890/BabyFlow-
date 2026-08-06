@@ -301,6 +301,8 @@ details.advanced[open]{background:#fff}
 
 
 .activity-remaining{font-size:12px;color:#475569;margin-top:4px;white-space:nowrap}
+
+.selected-day-readable{margin-top:6px;min-height:18px;color:#475569;font-size:14px;font-weight:700}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -317,7 +319,7 @@ details.advanced[open]{background:#fff}
 <div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule settings</div>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
-  <div class="field"><label>Selected day</label><input id="selectedDate" type="date"></div>
+  <div class="field"><label>Selected day</label><input id="selectedDate" type="date"><div class="hint selected-day-readable" id="selectedDayReadable"></div></div>
   <div class="field">
     <label>&nbsp;</label>
     <div class="row" style="margin-top:0">
@@ -417,6 +419,7 @@ details.advanced[open]{background:#fff}
 <div class="card"><h2>Today’s timeline</h2><div class="timeline-toolbar"><button class="secondary small-btn" onclick="event.stopPropagation(); toggleActivityPanel()">Add an activity</button><button class="secondary small-btn" id="togglePastBtn" onclick="togglePastEvents()">Collapse past events</button></div><div id="activityPanel" class="edit-panel hidden" onclick="event.stopPropagation()" style="margin-top:0;padding-top:0;border-top:none"><div class="inline-grid"><div><label>Activity</label><select id="activityType">
 <option value="Babywear (Chores)">Babywear (Chores)</option>
 <option value="Babywear (Errands)">Babywear (Errands)</option>
+<option value="Babywear (Garden)">Babywear (Garden)</option>
 <option value="Babywear (Out)">Babywear (Out)</option>
 <option value="Babywear (Pack)">Babywear (Pack)</option>
 <option value="Back home (unload)">Back home (unload)</option>
@@ -426,18 +429,24 @@ details.advanced[open]{background:#fff}
 <option value="Diaper change">Diaper change</option>
 <option value="Digest">Digest</option>
 <option value="Errands">Errands</option>
+<option value="Face-to-face singing">Face-to-face singing</option>
+<option value="Face-to-face talking">Face-to-face talking</option>
 <option value="Feed">Feed</option>
 <option value="Get dressed">Get dressed</option>
 <option value="Held">Held</option>
 <option value="Held by fam/friends">Held by fam/friends</option>
 <option value="Load up car">Load up car</option>
 <option value="Lotion & Jammies">Lotion & Jammies</option>
+<option value="Low stimulation play">Low stimulation play</option>
+<option value="Massage">Massage</option>
 <option value="Nightcap">Nightcap</option>
 <option value="Nursery Rhymes">Nursery Rhymes</option>
 <option value="Outfit change">Outfit change</option>
 <option value="Play with dogs">Play with dogs</option>
 <option value="Playtime">Playtime</option>
 <option value="Pool">Pool</option>
+<option value="Ride/Drive to Sleep">Ride/Drive to Sleep</option>
+<option value="Rocker">Rocker</option>
 <option value="Slowly waking">Slowly waking</option>
 <option value="Story time">Story time</option>
 <option value="Stretches">Stretches</option>
@@ -447,8 +456,10 @@ details.advanced[open]{background:#fff}
 <option value="Swing">Swing</option>
 <option value="Swing to sleep">Swing to sleep</option>
 <option value="Top-Off">Top-Off</option>
+<option value="Tummy massage">Tummy massage</option>
 <option value="Tummy time">Tummy time</option>
 <option value="Walk">Walk</option>
+<option value="Walk around yard">Walk around yard</option>
 <option value="Wind-down">Wind-down</option>
 </select></div><div><label>Time</label><input id="activityTime" type="time"></div></div><div class="row"><button class="secondary small-btn" onclick="addActivity()">Add</button></div></div><div id="timeline">Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.</div></div>
 </div>
@@ -459,7 +470,7 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=8;
+const STORAGE_SCHEMA_VERSION=9;
 const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
@@ -1052,10 +1063,20 @@ function loadState(){ try{ let s=safeParseJSON(localStorage.getItem(STORAGE_KEY)
 function clearAll(){
   createAutomaticBackup('Before Clear all', true); ['dreamFeedTime','wakeTime'].forEach(id=>$(id).value='');  $('firstWWRange').value='39-44'; $('laterWWRange').value='55-65'; $('firstNapRange').value='65-75'; $('regularNapRange').value='90-120'; $('longNapRange').value='180'; $('feedRange').value='140-180'; $('longNapFeedRange').value='210';    $('maxNaps').value='5'; if($('finalWakeFeedType')) $('finalWakeFeedType').value='regular'; $('bathLength').value='7'; $('routineLengthBath').value='6'; $('routineLengthNoBath').value='15'; $('bedTopOffLength').value='5';  $('fullFeedLength').value='20';  $('digestLength').value='10';  $('windDownLength').value='5'; clearActuals(); updateHints(); updateRangeConversions(); $('timeline').innerHTML='Enter a dream feed time and wake time, then tap <b>Generate / Recalculate</b>.'; const tbtn=$('togglePastBtn'); if(tbtn) tbtn.textContent='Collapse past events'; $('rightNowCard').textContent=''; $('nextUpCard').textContent=''; $('nextFeed').textContent=''; $('goodnightCard').textContent=''; }
 function loadExample(){ clearAll();  $('dreamFeedTime').value='06:30'; $('wakeTime').value='08:45'; saveState(); generateTimeline(); }
+
+function updateSelectedDayReadable(){
+  const el=$('selectedDate'), out=$('selectedDayReadable');
+  if(!el||!out) return;
+  if(!el.value){ out.textContent=''; return; }
+  const d=new Date(el.value+'T00:00:00');
+  out.textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+
 function goToToday(){
   saveActualsForDay(getActiveDayKey());
   $('selectedDate').value = localDateStr();
   loadStoredActuals($('selectedDate').value);
+  updateSelectedDayReadable();
   generateTimeline();
 }
 function shiftDate(days){
@@ -1064,6 +1085,7 @@ function shiftDate(days){
   current.setDate(current.getDate() + days);
   const y=current.getFullYear(); const m=String(current.getMonth()+1).padStart(2,'0'); const day=String(current.getDate()).padStart(2,'0'); $('selectedDate').value = `${y}-${m}-${day}`;
   loadStoredActuals($('selectedDate').value);
+  updateSelectedDayReadable();
   generateTimeline();
 }
 
@@ -1071,6 +1093,7 @@ function shiftDate(days){
 function handleSelectedDateChange(){
   saveActualsForDay(getActiveDayKey());
   loadStoredActuals(getSelectedDateStr());
+  updateSelectedDayReadable();
   generateTimeline();
 }
 
@@ -2437,6 +2460,7 @@ try{
   }
   if(dateEl && !dateEl.value) dateEl.value = localDateStr();
   activeDayKey = dateEl ? dateEl.value : localDateStr();
+  updateSelectedDayReadable();
 }catch(e){}
 
 </script>
