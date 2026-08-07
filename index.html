@@ -315,7 +315,7 @@ details.advanced[open]{background:#fff}
 </head>
 <body><div class="wrap">
 <div class="card">
-<h2>BabyFlow</h2>
+<h2>BabyFlow</h2><div class="hint" id="babyFlowBuild">Build v189</div>
 <div class="section-title" style="margin-top:6px;margin-bottom:4px">Schedule settings</div>
 <div class="hint">Use one number for a fixed value, like <b>45</b>. Use a range for wiggle room, like <b>40-45</b> or <b>40 - 45</b>.</div>
 <div class="grid">
@@ -470,7 +470,7 @@ const DAYS_STORAGE_KEY='babyflow_days';
 const UI_STORAGE_KEY='babyflow_ui';
 const BACKUPS_STORAGE_KEY='babyflow_backups';
 const STORAGE_SCHEMA_KEY='babyflow_storage_schema';
-const STORAGE_SCHEMA_VERSION=9;
+const STORAGE_SCHEMA_VERSION=10;
 const MAX_AUTOMATIC_BACKUPS=20;
 const DEFAULT_FULL_FEED_MINUTES=20, TOP_OFF_MINUTES=5, NIGHT_CAP_MINUTES=10, SLOW_WAKE_BUFFER_MINUTES=5;
 const actuals = {};
@@ -2467,8 +2467,19 @@ try{
 
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('Service worker registration failed:', err));
+  window.addEventListener('load', async () => {
+    try{
+      const registration = await navigator.serviceWorker.register('./sw.js?v=189', {updateViaCache:'none'});
+      await registration.update();
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if(sessionStorage.getItem('babyflow_sw_reloaded_v189')) return;
+        sessionStorage.setItem('babyflow_sw_reloaded_v189', '1');
+        location.reload();
+      });
+    }catch(err){
+      console.log('Service worker registration failed:', err);
+    }
   });
 }
 
