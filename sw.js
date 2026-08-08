@@ -1,4 +1,4 @@
-const CACHE_NAME = 'babyflow-pwa-v189';
+const CACHE_NAME = 'babyflow-pwa-v190';
 const APP_SHELL = [
   './',
   './index.html',
